@@ -1,23 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Analyzer Section -->
+    
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Home') }}</div>
+        <div>
+        <h4>Web Security Header Analyzer</h4>
+        <p>Scan any website you want — enter the website URL below:</p>
 
-                <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    {{ __('You are logged in!') }}
-                </div>
-            </div>
-        </div>
+        <form action="{{ route('analyze') }}" method="POST">
+            @csrf
+            <input type="text" name="url" placeholder="Enter website URL">
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
     </div>
 </div>
 @endsection

@@ -15,6 +15,65 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    <style>
+        /* ======================= NAVBAR CUSTOM STYLES ======================= */
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.75rem; /* matches 'AnaEvaRec' font size in welcome page */
+            color: #4f46e5;
+            text-decoration: none;
+        }
+
+        .navbar-brand-custom:hover {
+            color: #4338ca;
+        }
+
+        /* Adjust navbar height similar to welcome page (around 5rem / 80px) */
+        .navbar {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            min-height: 80px;
+        }
+
+        /* Center the nav links */
+        .navbar-nav-center {
+            margin: 0 auto;
+        }
+
+        /* Nav links style (Dashboard & History) */
+        .navbar-nav-center .nav-link {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333 !important;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav-center .nav-link.active,
+        .navbar-nav-center .nav-link:hover {
+            color: #4f46e5 !important;
+        }
+
+        /* User dropdown (Logout section) */
+        .navbar-nav.ms-auto .nav-link,
+        .dropdown-item {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .dropdown-item:hover {
+            color: #4f46e5 !important;
+            background-color: #f3f4f6 !important;
+        }
+
+        /* Ensure smooth alignment with welcome page spacing */
+        .navbar-light.bg-white {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -24,8 +83,8 @@
         <!-- Navbar for Guests (Login & Register) -->
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
+                <a class="navbar-brand navbar-brand-custom" href="{{ url('/') }}">
+                    AnaEvaRec
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarGuest"
@@ -55,10 +114,10 @@
 
         @auth
         <!-- Navbar for Authenticated Users (Dashboard, History, User Dropdown) -->
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
+        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ route('home') }}">
-                    {{ config('app.name', 'Laravel') }}
+                <a class="navbar-brand navbar-brand-custom" href="{{ route('home') }}">
+                    AnaEvaRec
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarAuth"
@@ -68,7 +127,7 @@
 
                 <div class="collapse navbar-collapse" id="navbarAuth">
                     <!-- Center Nav Links -->
-                    <ul class="navbar-nav mx-auto">
+                    <ul class="navbar-nav navbar-nav-center">
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
                                 Dashboard
