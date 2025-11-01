@@ -17,5 +17,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/history', [HistoryController::class, 'index'])->name('history');
     Route::post('/analyze', [App\Http\Controllers\AnalyzeController::class, 'analyze'])->name('analyze');
-
+    Route::get('/analysis/{id}', [App\Http\Controllers\AnalyzeController::class, 'show'])->name('analysis.show');
 });
