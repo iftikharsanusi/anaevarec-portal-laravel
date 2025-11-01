@@ -68,39 +68,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon.ico') }}">
 
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {!! json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'WebApplication',
-        'name' => 'AnaEvaRec',
-        'url' => $siteUrl,
-        'description' => $defaultDescription,
-        'applicationCategory' => 'SecurityApplication',
-        'operatingSystem' => 'Web',
-        'offers' => [
-            '@type' => 'Offer',
-            'price' => '0',
-            'priceCurrency' => 'USD'
-        ],
-        'author' => [
-            '@type' => 'Person',
-            'name' => $author,
-            'url' => $siteUrl
-        ],
-        'creator' => [
-            '@type' => 'Person',
-            'name' => $author
-        ],
-        'featureList' => [
-            'HTTP Security Header Analysis',
-            'Security Score Calculation',
-            'Missing Header Detection',
-            'Security Recommendations',
-            'Detailed Header Reports'
-        ]
-    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
-    </script>
+
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
