@@ -1,5 +1,20 @@
 @extends('layouts.app')
 
+@section('title', 'Analysis History')
+
+@php
+    $description = 'View your complete analysis history. Browse all past website security header analyses with detailed security scores and recommendations.';
+@endphp
+
+@section('meta')
+    <meta name="description" content="{{ $description }}">
+    @php
+        $ogTitle = 'Analysis History - AnaEvaRec';
+        $ogDescription = $description;
+        $ogImage = url('/images/og-image.png');
+    @endphp
+@endsection
+
 @section('content')
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -29,11 +44,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge 
-                                                    @if($analysis->security_score >= 80) bg-success
-                                                    @elseif($analysis->security_score >= 50) bg-warning
-                                                    @else bg-danger
-                                                    @endif">
+                                                <span class="badge {{ $analysis->security_score >= 80 ? 'bg-success' : ($analysis->security_score >= 50 ? 'bg-warning' : 'bg-danger') }}">
                                                     {{ $analysis->security_score }}%
                                                 </span>
                                             </td>

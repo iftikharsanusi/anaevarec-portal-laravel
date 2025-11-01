@@ -1,5 +1,20 @@
 @extends('layouts.app')
 
+@section('title', 'Dashboard')
+
+@php
+    $description = 'Analyze website security headers instantly. Get detailed security analysis, recommendations, and missing header reports for any website URL.';
+@endphp
+
+@section('meta')
+    <meta name="description" content="{{ $description }}">
+    @php
+        $ogTitle = 'Dashboard - AnaEvaRec | Web Security Header Analyzer';
+        $ogDescription = $description;
+        $ogImage = url('/images/og-image.png');
+    @endphp
+@endsection
+
 @section('content')
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -58,11 +73,7 @@
                                 <h6 class="text-muted mb-2">Security Score</h6>
                                 <div class="d-flex align-items-center">
                                     <div class="progress flex-grow-1 me-2" style="height: 25px;">
-                                        <div class="progress-bar 
-                                            @if($latestAnalysis->security_score >= 80) bg-success
-                                            @elseif($latestAnalysis->security_score >= 50) bg-warning
-                                            @else bg-danger
-                                            @endif" 
+                                        <div class="progress-bar {{ $latestAnalysis->security_score >= 80 ? 'bg-success' : ($latestAnalysis->security_score >= 50 ? 'bg-warning' : 'bg-danger') }}" 
                                             role="progressbar" 
                                             style="width: {{ $latestAnalysis->security_score }}%"
                                             aria-valuenow="{{ $latestAnalysis->security_score }}" 
@@ -71,11 +82,7 @@
                                             <strong>{{ $latestAnalysis->security_score }}%</strong>
                                         </div>
                                     </div>
-                                    <span class="badge 
-                                        @if($latestAnalysis->security_score >= 80) bg-success
-                                        @elseif($latestAnalysis->security_score >= 50) bg-warning
-                                        @else bg-danger
-                                        @endif">
+                                    <span class="badge {{ $latestAnalysis->security_score >= 80 ? 'bg-success' : ($latestAnalysis->security_score >= 50 ? 'bg-warning' : 'bg-danger') }}">
                                         @php
                                             $grade = 'F';
                                             if ($latestAnalysis->security_score >= 90) $grade = 'A';
@@ -198,11 +205,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge 
-                                                    @if($analysis->security_score >= 80) bg-success
-                                                    @elseif($analysis->security_score >= 50) bg-warning
-                                                    @else bg-danger
-                                                    @endif">
+                                                <span class="badge {{ $analysis->security_score >= 80 ? 'bg-success' : ($analysis->security_score >= 50 ? 'bg-warning' : 'bg-danger') }}">
                                                     {{ $analysis->security_score }}%
                                                 </span>
                                             </td>

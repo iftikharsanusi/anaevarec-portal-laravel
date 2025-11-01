@@ -1,5 +1,29 @@
 @extends('layouts.app')
 
+@section('title', 'Security Analysis Report - ' . $analysis->url)
+
+@php
+    $description = 'Detailed security header analysis for ' . $analysis->url . '. Security Score: ' . $analysis->security_score . '%. ' . 
+                   (is_array($analysis->missing_security_features) && count($analysis->missing_security_features) > 0 
+                   ? count($analysis->missing_security_features) . ' missing security headers detected. ' 
+                   : 'All security headers present. ') .
+                   'View complete header analysis, recommendations, and missing security features.';
+    $ogImage = $analysis->screenshot_url ?? url('/images/og-image.png');
+@endphp
+
+@section('meta')
+    <meta name="description" content="{{ $description }}">
+    <meta name="keywords" content="security analysis, {{ $analysis->url }}, HTTP headers, security headers, {{ $analysis->security_score }}%, website security">
+    @php
+        $ogTitle = 'Security Analysis: ' . $analysis->url . ' | AnaEvaRec';
+        $ogDescription = 'Security Score: ' . $analysis->security_score . '% - ' . 
+                        (is_array($analysis->missing_security_features) && count($analysis->missing_security_features) > 0 
+                        ? count($analysis->missing_security_features) . ' missing headers' 
+                        : 'All headers present');
+        $ogImageAlt = 'Security analysis report for ' . $analysis->url;
+    @endphp
+@endsection
+
 @section('content')
 <div class="container mt-4">
     <!-- Back Button -->
@@ -114,11 +138,7 @@
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
                             </svg>
                         </span>
-                        <span class="fw-bold 
-                            @if($analysis->security_score >= 80) text-success
-                            @elseif($analysis->security_score >= 50) text-warning
-                            @else text-danger
-                            @endif">
+                        <span class="fw-bold {{ $analysis->security_score >= 80 ? 'text-success' : ($analysis->security_score >= 50 ? 'text-warning' : 'text-danger') }}">
                             {{ $analysis->security_score }}%
                         </span>
                     </div>

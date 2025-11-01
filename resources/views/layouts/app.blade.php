@@ -7,7 +7,100 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    @php
+        $siteUrl = 'https://anaevarec.iftikhar.app';
+        $siteName = 'AnaEvaRec - Web Security Header Analyzer';
+        $author = 'Iftikhar Sanusi';
+    @endphp
+
+    <!-- SEO Meta Tags -->
+    @yield('meta')
+    
+    @php
+        $defaultTitle = isset($title) ? $title . ' | ' . $siteName : $siteName;
+        $defaultDescription = isset($description) ? $description : 'Analyze and evaluate web security headers for any website. Get comprehensive security recommendations and detailed header analysis reports.';
+        $defaultImage = $siteUrl . '/images/og-image.png';
+        
+        // Set defaults for OG and Twitter if not set in child views
+        $ogTitle = $ogTitle ?? $defaultTitle;
+        $ogDescription = $ogDescription ?? $defaultDescription;
+        $ogImage = $ogImage ?? $defaultImage;
+        $ogImageAlt = $ogImageAlt ?? 'AnaEvaRec - Web Security Header Analyzer';
+        $twitterTitle = $twitterTitle ?? $defaultTitle;
+        $twitterDescription = $twitterDescription ?? $defaultDescription;
+        $twitterImage = $twitterImage ?? $defaultImage;
+        $twitterCreator = $twitterCreator ?? 'IftikharSanusi';
+    @endphp
+
+    <!-- Primary Meta Tags -->
+    <title>{{ $defaultTitle }}</title>
+    <meta name="title" content="{{ $defaultTitle }}">
+    <meta name="description" content="{{ $defaultDescription }}">
+    <meta name="keywords" content="web security, security headers, HTTP headers, security analysis, CSP, HSTS, X-Frame-Options, website security, cybersecurity, header analyzer">
+    <meta name="author" content="{{ $author }}">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $ogTitle }}">
+    <meta property="og:description" content="{{ $ogDescription }}">
+    <meta property="og:image" content="{{ $ogImage }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $ogImageAlt }}">
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url()->current() }}">
+    <meta name="twitter:title" content="{{ $twitterTitle }}">
+    <meta name="twitter:description" content="{{ $twitterDescription }}">
+    <meta name="twitter:image" content="{{ $twitterImage }}">
+    <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
+    <meta name="twitter:creator" content="@{{ $twitterCreator }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon.ico') }}">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'WebApplication',
+        'name' => 'AnaEvaRec',
+        'url' => $siteUrl,
+        'description' => $defaultDescription,
+        'applicationCategory' => 'SecurityApplication',
+        'operatingSystem' => 'Web',
+        'offers' => [
+            '@type' => 'Offer',
+            'price' => '0',
+            'priceCurrency' => 'USD'
+        ],
+        'author' => [
+            '@type' => 'Person',
+            'name' => $author,
+            'url' => $siteUrl
+        ],
+        'creator' => [
+            '@type' => 'Person',
+            'name' => $author
+        ],
+        'featureList' => [
+            'HTTP Security Header Analysis',
+            'Security Score Calculation',
+            'Missing Header Detection',
+            'Security Recommendations',
+            'Detailed Header Reports'
+        ]
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    </script>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">

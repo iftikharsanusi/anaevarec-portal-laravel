@@ -4,7 +4,77 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Web Security Header Analyzer</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>AnaEvaRec - Web Security Header Analyzer | Analyze Website Security Headers</title>
+    <meta name="title" content="AnaEvaRec - Web Security Header Analyzer | Analyze Website Security Headers">
+    <meta name="description" content="Free web security header analyzer. Test and analyze HTTP security headers for any website. Get comprehensive security recommendations, missing header reports, and detailed analysis. Created by Iftikhar Sanusi.">
+    <meta name="keywords" content="web security, security headers, HTTP headers, security analysis, CSP, HSTS, X-Frame-Options, website security, cybersecurity, header analyzer, security scanner, web security tool">
+    <meta name="author" content="Iftikhar Sanusi">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <link rel="canonical" href="{{ url('/') }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url('/') }}">
+    <meta property="og:title" content="AnaEvaRec - Web Security Header Analyzer | Analyze Website Security Headers">
+    <meta property="og:description" content="Free web security header analyzer. Test and analyze HTTP security headers for any website. Get comprehensive security recommendations and detailed analysis reports.">
+    <meta property="og:image" content="{{ url('/images/og-image.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AnaEvaRec - Web Security Header Analyzer">
+    <meta property="og:site_name" content="AnaEvaRec">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url('/') }}">
+    <meta name="twitter:title" content="AnaEvaRec - Web Security Header Analyzer">
+    <meta name="twitter:description" content="Free web security header analyzer. Test and analyze HTTP security headers for any website.">
+    <meta name="twitter:image" content="{{ url('/images/og-image.png') }}">
+    <meta name="twitter:image:alt" content="AnaEvaRec - Web Security Header Analyzer">
+    <meta name="twitter:creator" content="@IftikharSanusi">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon.ico') }}">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "AnaEvaRec",
+        "url": "{{ url('/') }}",
+        "description": "Free web security header analyzer. Test and analyze HTTP security headers for any website.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Iftikhar Sanusi",
+            "url": "https://anaevarec.iftikhar.app"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Iftikhar Sanusi"
+        },
+        "featureList": [
+            "HTTP Security Header Analysis",
+            "Security Score Calculation",
+            "Missing Header Detection",
+            "Security Recommendations",
+            "Detailed Header Reports"
+        ]
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
