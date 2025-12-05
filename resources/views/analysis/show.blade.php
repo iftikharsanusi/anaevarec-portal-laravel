@@ -25,317 +25,759 @@
 @endsection
 
 @section('content')
-<div class="container mt-4">
-    <!-- Back Button -->
+@php
+    $headersRaw = is_array($analysis->headers) ? $analysis->headers : [];
+    $headersNormalized = array_change_key_case($headersRaw, CASE_LOWER);
+
+    $keyHeadersMap = [
+        'content-security-policy' => 'CSP',
+        'strict-transport-security' => 'HSTS',
+        'x-frame-options' => 'X-Frame',
+        'x-content-type-options' => 'X-CTO',
+        'referrer-policy' => 'Referrer',
+        'permissions-policy' => 'PP',
+        'cross-origin-resource-policy' => 'CORP',
+        'cross-origin-embedder-policy' => 'COEP',
+        'cross-origin-opener-policy' => 'COOP',
+    ];
+
+    // OWASP-style Security Header Weights (Total = 100)
+    $expectedSecurityHeaders = [
+        'content-security-policy' => [
+            'label' => 'Content-Security-Policy',
+            'description' => 'Defines trusted content sources to block injections.',
+            'weight' => 25,
+        ],
+        'strict-transport-security' => [
+            'label' => 'Strict-Transport-Security',
+            'description' => 'Forces browsers to use HTTPS connections.',
+            'weight' => 15,
+        ],
+        'x-frame-options' => [
+            'label' => 'X-Frame-Options',
+            'description' => 'Protects against clickjacking by controlling iframe usage.',
+            'weight' => 10,
+        ],
+        'x-content-type-options' => [
+            'label' => 'X-Content-Type-Options',
+            'description' => 'Prevents MIME-type sniffing for scripts and styles.',
+            'weight' => 10,
+        ],
+        'referrer-policy' => [
+            'label' => 'Referrer-Policy',
+            'description' => 'Controls how much referrer information is sent.',
+            'weight' => 10,
+        ],
+        'permissions-policy' => [
+            'label' => 'Permissions-Policy',
+            'description' => 'Restricts access to powerful browser features.',
+            'weight' => 10,
+        ],
+        'cross-origin-resource-policy' => [
+            'label' => 'Cross-Origin-Resource-Policy',
+            'description' => 'Controls how the browser handles cross-origin resource requests.',
+            'weight' => 5,
+        ],
+        'cross-origin-embedder-policy' => [
+            'label' => 'Cross-Origin-Embedder-Policy',
+            'description' => 'Prevents a document from loading cross-origin resources that don\'t explicitly grant permission.',
+            'weight' => 5,
+        ],
+        'cross-origin-opener-policy' => [
+            'label' => 'Cross-Origin-Opener-Policy',
+            'description' => 'Isolates browsing context by preventing other origins from accessing the window object.',
+            'weight' => 5,
+        ],
+        'expect-ct' => [
+            'label' => 'Expect-CT',
+            'description' => 'Enforces Certificate Transparency compliance.',
+            'weight' => 5,
+        ],
+        'report-to' => [
+            'label' => 'Report-To',
+            'description' => 'Specifies endpoints for reporting API violations.',
+            'weight' => 5,
+        ],
+    ];
+
+    $presentHeadersDetails = [];
+    $presentKeyHeaders = [];
+    $additionalPresentHeaders = [];
+
+    foreach ($expectedSecurityHeaders as $headerKey => $meta) {
+        if (array_key_exists($headerKey, $headersNormalized) && !empty($headersNormalized[$headerKey])) {
+            $presentHeadersDetails[] = [
+                'key' => $headerKey,
+                'label' => $meta['label'],
+                'description' => $meta['description'] ?? null,
+                'value' => $headersNormalized[$headerKey],
+            ];
+
+            if (array_key_exists($headerKey, $keyHeadersMap)) {
+                $presentKeyHeaders[] = $keyHeadersMap[$headerKey];
+            } else {
+                $additionalPresentHeaders[] = $meta['label'];
+            }
+        }
+    }
+
+    $missingCount = is_array($analysis->missing_security_features) ? count($analysis->missing_security_features) : 0;
+
+    // OWASP-style Grade Scale
+    $grade = 'F';
+    $gradeClass = 'text-danger';
+    $gradeRingBackground = '#fde2e1';
+    $gradeRingBorder = '#f66b6b';
+    $gradeDescription = 'Fail / no security headers';
+
+    if ($analysis->security_score >= 85) {
+        $grade = 'A';
+        $gradeClass = 'text-success';
+        $gradeRingBackground = '#d1e7dd';
+        $gradeRingBorder = '#52b788';
+        $gradeDescription = 'Excellent security';
+    } elseif ($analysis->security_score >= 70) {
+        $grade = 'B';
+        $gradeClass = 'text-success';
+        $gradeRingBackground = '#cff4fc';
+        $gradeRingBorder = '#38a3a5';
+        $gradeDescription = 'Good security';
+    } elseif ($analysis->security_score >= 55) {
+        $grade = 'C';
+        $gradeClass = 'text-warning';
+        $gradeRingBackground = '#fff3cd';
+        $gradeRingBorder = '#fcbf49';
+        $gradeDescription = 'Fair security';
+    } elseif ($analysis->security_score >= 40) {
+        $grade = 'D';
+        $gradeClass = 'text-warning';
+        $gradeRingBackground = '#ffe5d9';
+        $gradeRingBorder = '#f77f00';
+        $gradeDescription = 'Weak security';
+    } elseif ($analysis->security_score >= 25) {
+        $grade = 'E';
+        $gradeClass = 'text-danger';
+        $gradeRingBackground = '#fde2e1';
+        $gradeRingBorder = '#f66b6b';
+        $gradeDescription = 'Poor security';
+    }
+
+    $missingHeadersList = [];
+    if (is_array($analysis->missing_security_features)) {
+        foreach ($analysis->missing_security_features as $missing) {
+            $missingHeadersList[] = $missing['name'] ?? $missing['header'] ?? 'Security Header';
+        }
+    }
+
+    $displayMissingHeaders = array_slice($missingHeadersList, 0, 6);
+    $missingOverflowCount = max(count($missingHeadersList) - count($displayMissingHeaders), 0);
+
+    $encodedUrl = urlencode($analysis->url);
+    // Multiple fallback services for reliability
+    $screenshotServices = [
+        $analysis->screenshot_url ?? null,
+        "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}",
+        "https://api.pagepeeker.com/v2/thumbs.php?size=x&url={$encodedUrl}",
+        "https://mini.s-shot.ru/1024x768/PNG/1024/?{$encodedUrl}",
+    ];
+    $screenshotUrl = collect($screenshotServices)->first(fn($url) => !empty($url));
+@endphp
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+    
+    body {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 30%, #93c5fd 60%, #60a5fa 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Screenshot styling */
+    #screenshot-img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center !important;
+        display: block !important;
+        min-height: 300px;
+    }
+
+    .recent-analyses-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+    }
+
+    .recent-analyses-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        border-radius: 16px;
+        overflow: hidden;
+        background-color: #fdfdff;
+    }
+
+    .recent-analyses-table thead th {
+        background-color: #f3f4ff;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
+
+    .recent-analyses-table tbody tr {
+        background-color: #ffffff;
+    }
+
+    .recent-analyses-table tbody tr + tr td {
+        border-top: 1px solid #f1f3f8;
+    }
+
+    .recent-analyses-table th,
+    .recent-analyses-table td {
+        padding: 16px 20px;
+        border: none;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .recent-analyses-table th:nth-child(1),
+    .recent-analyses-table td:nth-child(1) {
+        text-align: left;
+    }
+
+    .recent-analyses-table th:nth-child(2),
+    .recent-analyses-table td:nth-child(2) {
+        text-align: left;
+        padding-right: 5px;
+        max-width: 300px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .recent-analyses-table th:nth-child(3),
+    .recent-analyses-table td:nth-child(3) {
+        text-align: left;
+        padding-left: 5px;
+        padding-right: 10px;
+    }
+
+    .recent-analyses-table a.table-link {
+        color: #4f46e5;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .recent-analyses-table a.table-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Back to History button - white background for visibility */
+    a.btn-outline-secondary[href*="history"] {
+        background-color: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
+        color: #374151 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    a.btn-outline-secondary[href*="history"]:hover {
+        background-color: #f8f9fa !important;
+        border-color: rgba(0, 0, 0, 0.2) !important;
+        color: #1f2937 !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+</style>
+
+<div class="container py-4">
     <div class="mb-3">
-        <a href="{{ route('home') }}" class="btn btn-outline-secondary">
-            ← Back to Home
+        <a href="{{ route('history') }}"
+           class="btn btn-outline-secondary rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 fw-semibold">
+            <span aria-hidden="true">←</span>
+            Back to History
         </a>
     </div>
 
-    <!-- Top Section: Screenshot and Report Info -->
-    <div class="row mb-4">
-        <!-- Left: Screenshot -->
-        <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
-            <div class="card">
-                <div class="card-body p-0">
-                    @php
-                        $encodedUrl = urlencode($analysis->url);
-                        // Multiple screenshot service fallbacks
-                        $screenshotServices = [
-                            $analysis->screenshot_url ?? null,
-                            "https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?{$encodedUrl}",
-                            "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}",
-                            "https://api.pagepeeker.com/v2/thumbs.php?size=x&url={$encodedUrl}",
-                            "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={$encodedUrl}&screenshot=true",
-                        ];
-                        $screenshotUrl = collect($screenshotServices)->first(fn($url) => !empty($url));
-                    @endphp
-                    <div style="position: relative; min-height: 400px; background-color: #f8f9fa; border-radius: 8px; overflow: hidden;">
-                        <img 
-                            id="screenshot-img"
-                            src="{{ $screenshotUrl }}" 
-                            alt="Website Screenshot for {{ $analysis->url }}"
-                            class="img-fluid"
-                            style="width: 100%; height: auto; display: block; min-height: 400px; object-fit: cover;"
-                            onerror="handleScreenshotError(this)"
-                        >
-                        <iframe 
-                            id="website-iframe"
-                            src="{{ $analysis->url }}" 
-                            style="width: 100%; height: 500px; border: none; display: none; border-radius: 8px;"
-                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                            loading="lazy"
-                        ></iframe>
-                        <div id="screenshot-placeholder" style="display: none; padding: 3rem; text-align: center; color: #6c757d; min-height: 400px; flex-direction: column; align-items: center; justify-content: center;" class="d-flex">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">🌐</div>
-                            <p class="h5 mb-2">Screenshot unavailable</p>
-                            <p class="text-muted mb-3 small" style="word-break: break-all;">{{ $analysis->url }}</p>
-                            <a href="{{ $analysis->url }}" target="_blank" class="btn btn-primary">
-                                Visit Website →
-                            </a>
+    <h3 class="fw-bold mb-4" style="font-family: 'Rubik', sans-serif;">SECURITY REPORT SUMMARY</h3>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body p-4 bg-white">
+            <div class="row g-3 align-items-center mb-4">
+                <div class="col-lg-8">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="text-uppercase small text-muted fw-semibold mb-1">Website URL</div>
+                            <div style="word-break: break-all;">
+                                <a href="{{ $analysis->url }}" target="_blank" class="text-decoration-none fw-semibold fs-5 text-primary">
+                                    {{ $analysis->url }}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-uppercase small text-muted fw-semibold mb-1">Report Time</div>
+                            <div class="fw-semibold fs-5">
+                                {{ $analysis->created_at->timezone('Asia/Kuala_Lumpur')->format('F j, Y g:i A') }}
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="{{ route('analysis.show', $analysis->id) }}?download=pdf" class="btn btn-primary fw-semibold rounded-pill px-4">
+                        Download PDF
+                    </a>
+                </div>
             </div>
-        </div>
 
-        <!-- Right: Report Header -->
-        <div class="col-lg-6 col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="text-primary mb-3">Latest Security Report for:</h4>
-                    <p class="text-muted mb-3" style="word-break: break-all;">
-                        <a href="{{ $analysis->url }}" target="_blank" class="text-decoration-none">{{ $analysis->url }}</a>
-                    </p>
-                    <div class="small text-muted">
-                        <div class="mb-2">
-                            <strong>Report generated:</strong> {{ $analysis->created_at->format('D, M j, Y g:i A T') }}
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-4 col-md-6">
+                    <div class="h-100 border rounded-4 p-4 bg-white d-flex flex-column align-items-center justify-content-center text-center">
+                        <div class="text-uppercase small text-muted fw-semibold mb-3">Security Grade</div>
+                        <div class="ratio ratio-1x1" style="max-width: 160px; width: 55%;">
+                            <div class="rounded-circle d-flex flex-column align-items-center justify-content-center"
+                                 style="background-color: {{ $gradeRingBackground }}; border: 8px solid {{ $gradeRingBorder }};">
+                                <span class="display-3 fw-bold {{ $gradeClass }}" style="font-size: clamp(2.5rem, 6vw, 4rem);">{{ $grade }}</span>
+                            </div>
                         </div>
-                        <div class="mb-2">
-                            <span>🇺🇸</span>
-                            <strong>Test Server Location:</strong> Seattle, WA, USA
-                        </div>
-                        <div>
-                            <span>🌐</span>
-                            <strong>Using:</strong> HTTP Guzzle, Laravel Framework
+                        <div class="badge px-4 py-2 mt-4" style="font-size: 0.95rem; background-color: {{ $gradeRingBorder }}; color: #fff; border-radius: 999px;">
+                            Score {{ $analysis->security_score }}%
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Bottom Section: Metrics -->
-    <div class="row">
-        <!-- Left: Security Grade -->
-        <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="text-primary mb-3 d-flex align-items-center">
-                        Security Grade
-                        <svg class="ms-2" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                        </svg>
-                    </h5>
-                    <div class="text-center mb-4">
-                        @php
-                            $grade = 'F';
-                            $gradeClass = 'text-danger';
-                            if ($analysis->security_score >= 90) { $grade = 'A'; $gradeClass = 'text-success'; }
-                            elseif ($analysis->security_score >= 80) { $grade = 'B'; $gradeClass = 'text-info'; }
-                            elseif ($analysis->security_score >= 70) { $grade = 'C'; $gradeClass = 'text-warning'; }
-                            elseif ($analysis->security_score >= 60) { $grade = 'D'; $gradeClass = 'text-warning'; }
-                        @endphp
-                        <div class="{{ $gradeClass }}" style="font-size: 5rem; font-weight: 700; line-height: 1;">
-                            {{ $grade }}
+                <div class="col-lg-4 col-md-6">
+                    <div class="h-100 border rounded-4 p-4 bg-white">
+                        <div class="text-uppercase small text-muted fw-semibold mb-2">Security Headers Status</div>
+                        <div class="d-flex gap-2 mb-3">
+                            <span class="badge rounded-pill bg-success px-3 py-2">{{ count($presentHeadersDetails) }} Present</span>
+                            <span class="badge rounded-pill {{ $missingCount > 0 ? 'bg-danger' : 'bg-success' }} px-3 py-2">{{ $missingCount }} Missing</span>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                        <span class="small d-flex align-items-center">
-                            Security Score
-                            <svg class="ms-2" width="14" height="14" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                            </svg>
-                        </span>
-                        <span class="fw-bold {{ $analysis->security_score >= 80 ? 'text-success' : ($analysis->security_score >= 50 ? 'text-warning' : 'text-danger') }}">
-                            {{ $analysis->security_score }}%
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2">
-                        <span class="small d-flex align-items-center">
-                            Headers Present
-                            <svg class="ms-2" width="14" height="14" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                            </svg>
-                        </span>
-                        <span class="fw-bold text-success">
-                            @php
-                                $totalSecurityHeaders = 10;
-                                $missingCount = is_array($analysis->missing_security_features) ? count($analysis->missing_security_features) : 0;
-                                $presentCount = $totalSecurityHeaders - $missingCount;
-                            @endphp
-                            {{ $presentCount }}/{{ $totalSecurityHeaders }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: Security Headers Status -->
-        <div class="col-lg-6 col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="text-primary mb-3 d-flex align-items-center">
-                        Security Headers Status
-                        <svg class="ms-2" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                        </svg>
-                    </h5>
-                    
-                    @php
-                        $headers = $analysis->headers ?? [];
-                        $securityHeaders = [
-                            'Strict-Transport-Security' => 'HSTS',
-                            'X-Frame-Options' => 'X-Frame-Options',
-                            'X-Content-Type-Options' => 'X-Content-Type',
-                            'Content-Security-Policy' => 'CSP',
-                            'X-XSS-Protection' => 'XSS Protection',
-                        ];
-                        
-                        $headerStatus = [];
-                        foreach ($securityHeaders as $headerName => $displayName) {
-                            $found = false;
-                            foreach ($headers as $key => $value) {
-                                if (strcasecmp($key, $headerName) === 0) {
-                                    $found = true;
-                                    break;
-                                }
-                            }
-                            $headerStatus[] = [
-                                'name' => $displayName,
-                                'present' => $found,
-                            ];
-                        }
-                    @endphp
-
-                    @foreach($headerStatus as $status)
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="small d-flex align-items-center">
-                                {{ $status['name'] }}
-                                <svg class="ms-2" width="14" height="14" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                                </svg>
-                            </span>
-                            <span class="badge {{ $status['present'] ? 'bg-success' : 'bg-danger' }}">
-                                {{ $status['present'] ? 'Present' : 'Missing' }}
-                            </span>
-                        </div>
-                    @endforeach
-
-                    @php
-                        $missingCount = is_array($analysis->missing_security_features) ? count($analysis->missing_security_features) : 0;
-                    @endphp
-                    <div class="d-flex justify-content-between align-items-center py-2">
-                        <span class="small d-flex align-items-center">
-                            Missing Headers
-                            <svg class="ms-2" width="14" height="14" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="cursor: help; color: #6c757d;">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                            </svg>
-                        </span>
-                        <span class="badge {{ $missingCount == 0 ? 'bg-success' : ($missingCount <= 3 ? 'bg-warning' : 'bg-danger') }}">
-                            {{ $missingCount }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Missing Security Features Section -->
-    @if(is_array($analysis->missing_security_features) && count($analysis->missing_security_features) > 0)
-        <div class="card mt-4">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">⚠ Missing Security Features</h5>
-            </div>
-            <div class="card-body">
-                @foreach($analysis->missing_security_features as $missing)
-                    <div class="alert alert-warning mb-3" style="border-left: 4px solid #dc3545; background-color: #fff3cd;">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-2 text-danger fw-bold">
-                                    {{ $missing['name'] ?? $missing['header'] }}
-                                </h6>
-                                <p class="mb-1 small">
-                                    <strong>Description:</strong> {{ $missing['description'] ?? 'N/A' }}
-                                </p>
-                                <p class="mb-0 small">
-                                    <strong>Recommendation:</strong> {{ $missing['recommendation'] ?? 'Add this security header to improve your website security.' }}
-                                </p>
-                                @if(isset($missing['current_value']))
-                                    <p class="mt-2 mb-0 small text-muted">
-                                        <strong>Current Value:</strong> <code class="small">{{ $missing['current_value'] }}</code>
-                                    </p>
+                        <div class="mb-3">
+                            <div class="text-uppercase small text-muted fw-semibold mb-2">Key Headers</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @if(count($presentKeyHeaders) > 0 || count($additionalPresentHeaders) > 0)
+                                    @foreach(array_merge($presentKeyHeaders, $additionalPresentHeaders) as $headerLabel)
+                                        <span class="badge rounded-pill bg-success px-3 py-2">{{ $headerLabel }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted small">No key headers detected.</span>
                                 @endif
                             </div>
-                            <span class="badge bg-danger ms-2 mb-2">Missing</span>
+                        </div>
+                        <div>
+                            <div class="text-uppercase small text-muted fw-semibold mb-2">Missing Headers ({{ $missingCount }})</div>
+                            @if($missingCount > 0)
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($displayMissingHeaders as $missingHeader)
+                                        <span class="badge rounded-pill bg-danger px-3 py-2">{{ $missingHeader }}</span>
+                                    @endforeach
+                                    @if($missingOverflowCount > 0)
+                                        <span class="badge rounded-pill bg-secondary px-3 py-2">+{{ $missingOverflowCount }} more</span>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="badge rounded-pill bg-success px-3 py-2">All headers present</span>
+                            @endif
                         </div>
                     </div>
-                @endforeach
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="h-100 border rounded-4 bg-white p-3">
+                        <div class="text-uppercase small text-muted fw-semibold mb-2">Website Preview</div>
+                        <div class="rounded-3 overflow-hidden position-relative" style="min-height: 300px; background-color: #f8f9fa;">
+                            @if(!empty($screenshotUrl))
+                            <img
+                                id="screenshot-img"
+                                data-screenshot-url="{{ $screenshotUrl }}"
+                                src="{{ $screenshotUrl }}"
+                                alt="Website Screenshot for {{ $analysis->url }}"
+                                class="img-fluid w-100 h-100"
+                                style="object-fit: cover; width: 100%; height: 100%; display: block;"
+                                onerror="handleScreenshotError(this)"
+                            >
+                            @else
+                            <div class="h-100 w-100 d-flex flex-column align-items-center justify-content-center text-muted" style="background-color: #f8f9fa;">
+                                <div style="font-size: 2.5rem;">🌐</div>
+                                <div class="mt-2 fw-semibold text-center px-3">Screenshot unavailable</div>
+                                <div class="small text-center px-3">{{ $analysis->url }}</div>
+                                <a href="{{ $analysis->url }}" class="btn btn-outline-primary btn-sm mt-3" target="_blank">
+                                    Visit Website
+                                </a>
+                            </div>
+                            @endif
+                            <iframe
+                                id="website-iframe"
+                                src="{{ $analysis->url }}"
+                                style="width: 100%; height: 100%; border: none; display: none;"
+                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                loading="lazy"
+                            ></iframe>
+                            <div id="screenshot-placeholder"
+                                 class="d-none h-100 w-100 position-absolute top-0 start-0 d-flex flex-column align-items-center justify-content-center text-muted"
+                                 style="background-color: #f8f9fa;">
+                                <div style="font-size: 2.5rem;">🌐</div>
+                                <div class="mt-2 fw-semibold text-center px-3">Screenshot unavailable</div>
+                                <div class="small text-center px-3">{{ $analysis->url }}</div>
+                                <a href="{{ $analysis->url }}" class="btn btn-outline-primary btn-sm mt-3" target="_blank">
+                                    Visit Website
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    @endif
+    </div>
 
-    <!-- Recommendations -->
-    @if(is_array($analysis->recommendations) && count($analysis->recommendations) > 0)
-        <div class="card mt-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">💡 Security Recommendations</h5>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <h5 class="fw-bold mb-0">Present Security Headers</h5>
+                <span class="badge bg-success">
+                    {{ count($presentHeadersDetails) }} {{ \Illuminate\Support\Str::plural('item', count($presentHeadersDetails)) }}
+                </span>
             </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    @foreach($analysis->recommendations as $recommendation)
-                        <li class="list-group-item">{{ $recommendation }}</li>
+
+            @if(count($presentHeadersDetails) > 0)
+                <div class="row g-3">
+                    @foreach($presentHeadersDetails as $header)
+                        <div class="col-12 col-md-6">
+                            <div class="rounded-4 p-3" style="background-color: rgba(25,135,84,0.08); border: 1px solid rgba(25,135,84,0.3);">
+                                <div class="d-flex justify-content-between flex-wrap gap-2">
+                                    <div class="flex-grow-1" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
+                                        <div class="fw-bold text-success mb-1" style="word-break: break-word;">{{ $header['label'] }}</div>
+                                        @if(!empty($header['description']))
+                                            <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                                {{ $header['description'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <span class="badge bg-success align-self-start flex-shrink-0">Present</span>
+                                </div>
+                            </div>
+                        </div>
                     @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
-
-    <!-- All Headers Section -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="mb-0">HTTP Headers</h5>
-        </div>
-        <div class="card-body">
-            @if(is_array($analysis->headers) && count($analysis->headers) > 0)
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 30%;">Header Name</th>
-                                <th>Header Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($analysis->headers as $name => $value)
-                                <tr>
-                                    <td><strong>{{ $name }}</strong></td>
-                                    <td>
-                                        <code class="small" style="background-color: #f8f9fa; padding: 2px 6px; border-radius: 3px; word-break: break-all;">
-                                            {{ is_array($value) ? json_encode($value) : $value }}
-                                        </code>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
                 </div>
             @else
-                <p class="text-muted mb-0">No headers found.</p>
+                <div class="alert alert-warning mb-0">
+                    No expected security headers were detected as present.
+                </div>
             @endif
         </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <h5 class="fw-bold mb-0">Missing Security Headers</h5>
+                <span class="badge {{ $missingCount > 0 ? 'bg-danger' : 'bg-success' }}">
+                    {{ $missingCount }} {{ \Illuminate\Support\Str::plural('item', $missingCount) }}
+                </span>
+            </div>
+
+            @if($missingCount > 0)
+                <div class="row g-3">
+                    @foreach($analysis->missing_security_features as $missing)
+                        @php
+                            $missingName = $missing['name'] ?? $missing['header'] ?? 'Security Header';
+                            $missingDescription = $missing['description'] ?? 'No description provided.';
+                        @endphp
+                        <div class="col-12 col-md-6">
+                            <div class="rounded-4 p-3 h-100" style="background-color: rgba(220,53,69,0.08); border: 1px solid rgba(220,53,69,0.3);">
+                                <div class="d-flex justify-content-between flex-wrap gap-2">
+                                    <div class="flex-grow-1" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
+                                        <div class="fw-bold text-danger mb-1" style="word-break: break-word;">{{ $missingName }}</div>
+                                        <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                            {{ $missingDescription }}
+                                        </div>
+                                        @if(isset($missing['current_value']))
+                                            <div class="small text-muted" style="word-break: break-word; overflow-wrap: break-word;">
+                                                <strong>Current Value:</strong>
+                                                <code style="word-break: break-all;">{{ $missing['current_value'] }}</code>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <span class="badge bg-danger align-self-start flex-shrink-0">Missing</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="alert alert-success mb-0">
+                    All essential security headers are present. Great work!
+                </div>
+            @endif
+        </div>
+    </div>
+
+    @if(is_array($analysis->recommendations) && count($analysis->recommendations) > 0)
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                    <h5 class="fw-bold mb-0">Security Recommendations</h5>
+                    <span class="badge bg-primary">
+                        {{ count($analysis->recommendations) }} {{ \Illuminate\Support\Str::plural('recommendation', count($analysis->recommendations)) }}
+                    </span>
+                </div>
+                <div class="row g-3">
+                    @foreach($analysis->recommendations as $index => $recommendation)
+                        <div class="col-12">
+                            <div class="rounded-4 p-4 h-100" style="background-color: rgba(13,110,253,0.08); border: 1px solid rgba(13,110,253,0.2);">
+                                <div class="d-flex gap-3">
+                                    <div class="flex-shrink-0 d-flex align-items-center" style="padding-top: 0.125rem;">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" 
+                                             style="width: 32px; height: 32px; background-color: #0d6efd; font-size: 0.875rem; min-width: 32px; flex-shrink: 0;">
+                                            {{ $index + 1 }}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 d-flex align-items-center" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
+                                        <p class="mb-0 text-dark" style="line-height: 1.6; word-break: break-word; overflow-wrap: break-word;">{{ $recommendation }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 16px; overflow: hidden; background: #ffffff;">
+        <div class="card-body p-0">
+            <!-- Header Section with Enhanced Gradient Background -->
+            <div class="p-3 text-white position-relative" style="background: linear-gradient(135deg, {{ $gradeRingBorder }} 0%, {{ $gradeRingBorder }}cc 100%); overflow: hidden;">
+                <!-- Decorative Background Elements -->
+                <div class="position-absolute top-0 end-0" style="width: 100px; height: 100px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; transform: translate(30%, -30%);"></div>
+                <div class="position-absolute bottom-0 start-0" style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.08); border-radius: 50%; transform: translate(-30%, 30%);"></div>
+                
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 position-relative">
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-0" style="font-size: 1.5rem; letter-spacing: -0.01em;">Overall Website Security</h5>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="text-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%); backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.4);">
+                                <span class="h4 fw-bold mb-0" style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $grade }}</span>
+                            </div>
+                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Grade</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%); backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.4);">
+                                <span class="h5 fw-bold mb-0" style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $analysis->security_score }}%</span>
+                            </div>
+                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Score</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Section with Enhanced Design -->
+            <div class="p-4 d-flex flex-column">
+                <!-- Security Description with Better Layout -->
+                <div class="mb-4">
+                    <p class="mb-0" style="line-height: 1.75; font-size: 1rem; color: #374151; font-weight: 400;">
+                        @if($analysis->security_score >= 85)
+                            This website demonstrates <strong class="text-success" style="font-weight: 600;">excellent security practices</strong> (Grade A) with a comprehensive set of security headers in place. The implementation shows strong protection against common web vulnerabilities including clickjacking, XSS attacks, and MIME-type sniffing. The security configuration indicates a well-maintained and security-conscious approach to web application development.
+                        @elseif($analysis->security_score >= 70)
+                            This website shows <strong class="text-success" style="font-weight: 600;">good security posture</strong> (Grade B) with most critical security headers implemented. While the current configuration provides solid protection against many common threats, there are opportunities to enhance security further by implementing additional recommended headers. The existing security measures demonstrate a proactive approach to web security.
+                        @elseif($analysis->security_score >= 55)
+                            This website has a <strong class="text-warning" style="font-weight: 600;">fair security posture</strong> (Grade C) with some essential security headers in place. However, several important security headers are missing, which could leave the site vulnerable to certain types of attacks. Implementing the missing headers would significantly improve the overall security and provide better protection against modern web threats.
+                        @elseif($analysis->security_score >= 40)
+                            This website has a <strong class="text-warning" style="font-weight: 600;">weak security posture</strong> (Grade D) with limited security headers implemented. Multiple critical security headers are missing, which increases the risk of various web-based attacks including clickjacking, XSS, and data injection. Immediate action is recommended to implement the missing security headers to reduce vulnerability exposure.
+                        @elseif($analysis->security_score >= 25)
+                            This website has a <strong class="text-danger" style="font-weight: 600;">poor security posture</strong> (Grade E) with very few security headers implemented. The site is vulnerable to a wide range of attacks including clickjacking, XSS, MIME-type sniffing, and more. The lack of proper security headers exposes the website and its users to significant risks. Urgent implementation of security headers is strongly recommended.
+                        @else
+                            This website has <strong class="text-danger" style="font-weight: 600;">failed security standards</strong> (Grade F) with no or minimal security headers implemented. The site is highly vulnerable to attacks including clickjacking, XSS, MIME-type sniffing, and more. The complete absence of proper security headers exposes the website and its users to critical risks. Immediate and comprehensive implementation of security headers is essential to protect against common web vulnerabilities.
+                        @endif
+                    </p>
+                </div>
+
+                <!-- Enhanced Stats Cards - Positioned at the bottom -->
+                <div class="row g-2" style="margin-top: auto;">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-2 p-2 rounded-3 shadow-sm transition-all" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 3px solid #22c55e; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
+                            <div class="flex-shrink-0">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                                    <span class="fw-bold text-white" style="font-size: 1rem;">{{ count($presentHeadersDetails) }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold" style="font-size: 0.85rem; color: #16a34a; letter-spacing: 0.02em;">Headers Present</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-2 p-2 rounded-3 shadow-sm transition-all" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 3px solid #ef4444; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
+                            <div class="flex-shrink-0">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                    <span class="fw-bold text-white" style="font-size: 1rem;">{{ $missingCount }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold" style="font-size: 0.85rem; color: #dc2626; letter-spacing: 0.02em;">Headers Missing</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-analyses-card bg-white shadow-sm p-4 mb-4">
+        <h5 class="fw-bold mb-4">Standard HTTP Headers</h5>
+        @if(is_array($analysis->headers) && count($analysis->headers) > 0)
+            @php
+                $securityHeaderKeys = array_keys($expectedSecurityHeaders);
+                $infoHeaders = ['server', 'x-powered-by', 'date', 'connection', 'transfer-encoding', 'content-length'];
+                $safeHeaders = ['content-type', 'cache-control', 'accept-ranges', 'etag', 'last-modified', 'expires', 'vary'];
+                $warningHeaders = ['x-aspnet-version', 'x-aspnetmvc-version'];
+                
+                // Header descriptions mapping
+                $headerDescriptions = [
+                    // Security Headers
+                    'content-security-policy' => 'Defines trusted content sources to block XSS and injection attacks.',
+                    'strict-transport-security' => 'Forces browsers to use HTTPS connections only.',
+                    'x-frame-options' => 'Protects against clickjacking by controlling iframe usage.',
+                    'x-content-type-options' => 'Prevents MIME-type sniffing for scripts and styles.',
+                    'referrer-policy' => 'Controls how much referrer information is sent with requests.',
+                    'permissions-policy' => 'Restricts access to powerful browser features and APIs.',
+                    'cross-origin-resource-policy' => 'Controls how the browser handles cross-origin resource requests.',
+                    'cross-origin-embedder-policy' => 'Prevents loading cross-origin resources without explicit permission.',
+                    'cross-origin-opener-policy' => 'Isolates browsing context by preventing cross-origin window access.',
+                    'expect-ct' => 'Enforces Certificate Transparency compliance.',
+                    'report-to' => 'Specifies endpoints for reporting API violations.',
+                    'x-xss-protection' => 'Enables XSS filtering in older browsers.',
+                    'x-permitted-cross-domain-policies' => 'Controls cross-domain policy files for Flash/PDF.',
+                    'clear-site-data' => 'Clears browsing data when specified.',
+                    
+                    // Standard Headers
+                    'server' => 'Identifies the server software and version.',
+                    'date' => 'The date and time when the response was generated.',
+                    'content-type' => 'Specifies the media type of the resource.',
+                    'content-length' => 'The size of the response body in bytes.',
+                    'connection' => 'Controls whether the network connection stays open.',
+                    'transfer-encoding' => 'Specifies the form of encoding used to transfer the entity.',
+                    'cache-control' => 'Directives for caching mechanisms in requests and responses.',
+                    'expires' => 'Date/time after which the response is considered stale.',
+                    'last-modified' => 'The last modification date of the resource.',
+                    'etag' => 'Entity tag for cache validation.',
+                    'vary' => 'Tells caches which request headers to consider when determining cacheability.',
+                    'accept-ranges' => 'Indicates which range units are supported.',
+                    
+                    // Cloudflare/Proxy Headers
+                    'cf-ray' => 'Cloudflare Ray ID for request tracking.',
+                    'cf-cache-status' => 'Cloudflare cache status (HIT, MISS, etc.).',
+                    'cf-request-id' => 'Cloudflare request identifier.',
+                    'nel' => 'Network Error Logging configuration.',
+                    
+                    // Other Headers
+                    'x-powered-by' => 'Reveals the server technology stack (security risk if exposed).',
+                    'alt-svc' => 'Alternative service advertisement for HTTP/2 or HTTP/3.',
+                    'location' => 'Used in redirects to specify the target URL.',
+                    'set-cookie' => 'Sends cookies from the server to the user agent.',
+                ];
+            @endphp
+            <div class="table-responsive">
+                <table class="recent-analyses-table">
+                    <thead>
+                        <tr>
+                            <th>Header</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($analysis->headers as $name => $value)
+                            @php
+                                $headerValue = is_array($value) ? json_encode($value) : $value;
+                                $headerLower = strtolower($name);
+                                
+                                // Get description
+                                $description = $headerDescriptions[$headerLower] ?? 
+                                               (isset($expectedSecurityHeaders[$headerLower]) ? $expectedSecurityHeaders[$headerLower]['description'] : 
+                                               'Standard HTTP header with no specific security implications.');
+                                
+                                // Determine status based on header type
+                                if (in_array($headerLower, $securityHeaderKeys) || in_array($headerLower, $safeHeaders)) {
+                                    $status = 'Safe';
+                                    $statusClass = 'bg-success';
+                                } elseif (in_array($headerLower, $infoHeaders)) {
+                                    $status = 'Info';
+                                    $statusClass = 'bg-info';
+                                } elseif (in_array($headerLower, $warningHeaders)) {
+                                    $status = 'Warning';
+                                    $statusClass = 'bg-warning text-dark';
+                                } else {
+                                    $status = 'Safe';
+                                    $statusClass = 'bg-success';
+                                }
+                            @endphp
+                            <tr>
+                                <td class="fw-semibold">{{ $name }}</td>
+                                <td style="padding-right: 5px !important; max-width: 300px; word-wrap: break-word; overflow-wrap: break-word;">
+                                    <code class="small" style="word-break: break-word; overflow-wrap: break-word; white-space: normal; color: #495057; display: block;">
+                                        {{ $headerValue }}
+                                    </code>
+                                </td>
+                                <td class="text-muted small" style="max-width: 300px; padding-left: 5px !important;">
+                                    {{ $description }}
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2 {{ $statusClass }}">
+                                        {{ $status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="text-muted mb-0">No headers detected for this scan.</p>
+        @endif
     </div>
 </div>
 
 <script>
-    let screenshotFallbacks = @json($screenshotServices);
+    const screenshotFallbacks = @json($screenshotServices);
     let currentFallbackIndex = 0;
     let triedIframe = false;
-    
+
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 2000; // 2 seconds
+
     function handleScreenshotError(img) {
+        // First, retry the same URL multiple times (for async services)
+        if (retryCount < maxRetries && currentFallbackIndex === 0) {
+            retryCount++;
+            const screenshotUrl = img.dataset.screenshotUrl || img.src;
+            if (screenshotUrl) {
+                console.log(`Retrying screenshot load (attempt ${retryCount}/${maxRetries})`);
+                setTimeout(function() {
+                    img.src = screenshotUrl;
+                }, retryDelay);
+                return;
+            }
+        }
+        
+        // If retries exhausted, try next fallback service
         currentFallbackIndex++;
         if (currentFallbackIndex < screenshotFallbacks.length && screenshotFallbacks[currentFallbackIndex]) {
+            retryCount = 0; // Reset retry count for new service
+            console.log(`Trying fallback service ${currentFallbackIndex + 1}`);
             img.src = screenshotFallbacks[currentFallbackIndex];
         } else if (!triedIframe) {
-            // Try iframe as last resort
             triedIframe = true;
             img.style.display = 'none';
             const iframe = document.getElementById('website-iframe');
             if (iframe) {
                 iframe.style.display = 'block';
-                // Timeout after 10 seconds if iframe doesn't load
-                setTimeout(function() {
+                setTimeout(function () {
                     if (iframe.style.display === 'block') {
                         try {
                             const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -343,7 +785,8 @@
                                 showPlaceholder();
                             }
                         } catch (e) {
-                            // Cross-origin, can't check
+                            // Cross-origin access blocked
+                            showPlaceholder();
                         }
                     }
                 }, 10000);
@@ -352,14 +795,15 @@
             showPlaceholder();
         }
     }
-    
+
     function showPlaceholder() {
         const img = document.getElementById('screenshot-img');
         const iframe = document.getElementById('website-iframe');
         const placeholder = document.getElementById('screenshot-placeholder');
         if (img) img.style.display = 'none';
         if (iframe) iframe.style.display = 'none';
-        if (placeholder) placeholder.style.display = 'flex';
+        if (placeholder) placeholder.classList.remove('d-none');
     }
 </script>
 @endsection
+

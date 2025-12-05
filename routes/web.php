@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HistoryController;
 
@@ -18,4 +19,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/history', [HistoryController::class, 'index'])->name('history');
     Route::post('/analyze', [App\Http\Controllers\AnalyzeController::class, 'analyze'])->name('analyze');
     Route::get('/analysis/{id}', [App\Http\Controllers\AnalyzeController::class, 'show'])->name('analysis.show');
+    Route::delete('/analysis/{id}', [HistoryController::class, 'destroy'])->name('analysis.destroy');
 });

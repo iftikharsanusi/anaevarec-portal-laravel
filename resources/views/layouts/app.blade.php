@@ -74,21 +74,27 @@
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
     <style>
         /* ======================= NAVBAR CUSTOM STYLES ======================= */
 
-        .navbar-brand-custom {
+        .brand-logo {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
             font-weight: 700;
-            font-size: 1.75rem; /* matches 'AnaEvaRec' font size in welcome page */
-            color: #4f46e5;
-            text-decoration: none;
+            font-size: 1.85rem;
+            letter-spacing: -0.025em;
+            color: #4f46e5 !important;
+            text-decoration: none !important;
         }
 
-        .navbar-brand-custom:hover {
-            color: #4338ca;
+        .brand-logo:hover,
+        .brand-logo:focus {
+            color: #4338ca !important;
         }
 
         /* Adjust navbar height similar to welcome page (around 5rem / 80px) */
@@ -96,11 +102,29 @@
             padding-top: 0.5rem !important;
             padding-bottom: 0.5rem !important;
             min-height: 80px;
+            position: relative;
         }
 
         /* Center the nav links */
         .navbar-nav-center {
-            margin: 0 auto;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        @media (max-width: 767.98px) {
+            .navbar-nav-center {
+                position: static;
+                transform: none;
+                flex-direction: column;
+                gap: 0.75rem;
+                margin: 0.5rem 0;
+            }
         }
 
         /* Nav links style (Dashboard & History) */
@@ -119,20 +143,216 @@
         }
 
         /* User dropdown (Logout section) */
-        .navbar-nav.ms-auto .nav-link,
-        .dropdown-item {
+        .navbar-nav.ms-auto .nav-link {
             font-weight: 600;
             font-size: 1.05rem;
+        }
+
+        .dropdown-item {
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.625rem 1.25rem;
+            transition: all 0.2s ease;
+            color: #374151;
         }
 
         .dropdown-item:hover {
             color: #4f46e5 !important;
             background-color: #f3f4f6 !important;
+            transform: translateX(2px);
         }
 
-        /* Ensure smooth alignment with welcome page spacing */
+        /* Professional logout button styling */
+        .dropdown-menu {
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .dropdown-item[href*="logout"] {
+            color: #ffffff !important;
+            background-color: #dc2626;
+            font-weight: 600;
+            border: 1px solid #dc2626;
+            border-radius: 6px;
+            margin: 0;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            width: 100%;
+            display: block;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item[href*="logout"]:hover {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        }
+
+        /* Professional navbar styling with glass morphism effect */
         .navbar-light.bg-white {
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Guest Navbar - Bracket-style Login and Register buttons */
+        #navbarGuest .nav-link {
+            font-weight: 600;
+            font-size: 1.15rem;
+            padding: 0.75rem 2rem !important;
+            margin: 0 0.5rem;
+            position: relative;
+            background-color: transparent;
+            color: #000000 !important;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            overflow: visible;
+        }
+
+        /* Top-left bracket - positioned slightly inward, black */
+        #navbarGuest .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 12px;
+            height: 12px;
+            border-top: 2px solid #000000;
+            border-left: 2px solid #000000;
+            transition: all 0.3s ease;
+        }
+
+        /* Bottom-right bracket - positioned slightly inward, black */
+        #navbarGuest .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            border-bottom: 2px solid #000000;
+            border-right: 2px solid #000000;
+            transition: all 0.3s ease;
+        }
+
+        /* Top-right and bottom-left brackets using background-image - positioned slightly inward, black */
+        #navbarGuest .nav-link {
+            background-image: 
+                /* Top-right horizontal line */
+                linear-gradient(to right, #000000 0%, #000000 12px, transparent 12px),
+                /* Top-right vertical line */
+                linear-gradient(to bottom, #000000 0%, #000000 12px, transparent 12px),
+                /* Bottom-left horizontal line */
+                linear-gradient(to right, transparent calc(100% - 16px), #000000 calc(100% - 16px), #000000 calc(100% - 4px)),
+                /* Bottom-left vertical line */
+                linear-gradient(to bottom, transparent calc(100% - 16px), #000000 calc(100% - 16px), #000000 calc(100% - 4px));
+            background-size: 
+                12px 2px,  /* top-right horizontal */
+                2px 12px,  /* top-right vertical */
+                12px 2px,  /* bottom-left horizontal */
+                2px 12px;  /* bottom-left vertical */
+            background-position: 
+                top 4px right 4px,    /* top-right horizontal */
+                top 4px right 4px,    /* top-right vertical */
+                bottom 4px left 4px,  /* bottom-left horizontal */
+                bottom 4px left 4px;  /* bottom-left vertical */
+            background-repeat: no-repeat;
+        }
+
+        /* Hover state - white background, blue text, brackets extend and connect */
+        #navbarGuest .nav-link:hover {
+            background-color: #ffffff !important;
+            color: #4f46e5 !important;
+            transform: translateY(-1px);
+            background-image: 
+                /* Top-right horizontal line - extends to connect with top */
+                linear-gradient(to right, transparent 0%, #4f46e5 0%, #4f46e5 100%),
+                /* Top-right vertical line - extends to connect with right */
+                linear-gradient(to bottom, transparent 0%, #4f46e5 0%, #4f46e5 100%),
+                /* Bottom-left horizontal line - extends to connect with bottom */
+                linear-gradient(to right, #4f46e5 0%, #4f46e5 100%, transparent 100%),
+                /* Bottom-left vertical line - extends to connect with left */
+                linear-gradient(to bottom, #4f46e5 0%, #4f46e5 100%, transparent 100%);
+            background-size: 
+                calc(100% - 4px) 2px,  /* top horizontal - full width */
+                2px calc(100% - 4px),  /* right vertical - full height */
+                calc(100% - 4px) 2px,  /* bottom horizontal - full width */
+                2px calc(100% - 4px);  /* left vertical - full height */
+            background-position: 
+                top 0 right 0,    /* top horizontal */
+                top 0 right 0,    /* right vertical */
+                bottom 0 left 0,  /* bottom horizontal */
+                bottom 0 left 0;  /* left vertical */
+            background-repeat: no-repeat;
+        }
+
+        /* On hover, extend top-left bracket to connect with top and left sides */
+        #navbarGuest .nav-link:hover::before {
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+            border-top: 2px solid #4f46e5;
+            border-left: 2px solid #4f46e5;
+            border-right: none;
+            border-bottom: none;
+            top: 0;
+            left: 0;
+        }
+
+        /* On hover, extend bottom-right bracket to connect with bottom and right sides */
+        #navbarGuest .nav-link:hover::after {
+            width: calc(100% - 4px);
+            height: calc(100% - 4px);
+            border-bottom: 2px solid #4f46e5;
+            border-right: 2px solid #4f46e5;
+            border-left: none;
+            border-top: none;
+            bottom: 0;
+            right: 0;
+        }
+
+        @media (max-width: 767.98px) {
+            #navbarGuest .nav-link {
+                font-size: 1rem;
+                padding: 0.6rem 1.5rem !important;
+                margin: 0.25rem 0;
+            }
+            
+            /* Ensure brackets are still visible on mobile */
+            #navbarGuest .nav-link::before {
+                top: 3px;
+                left: 3px;
+                width: 10px;
+                height: 10px;
+            }
+            
+            #navbarGuest .nav-link::after {
+                bottom: 3px;
+                right: 3px;
+                width: 10px;
+                height: 10px;
+            }
+            
+            /* Adjust background-image brackets for mobile */
+            #navbarGuest .nav-link {
+                background-size: 
+                    10px 2px,  /* top-right horizontal */
+                    2px 10px,  /* top-right vertical */
+                    10px 2px,  /* bottom-left horizontal */
+                    2px 10px;  /* bottom-left vertical */
+                background-position: 
+                    top 3px right 3px,    /* top-right horizontal */
+                    top 3px right 3px,    /* top-right vertical */
+                    bottom 3px left 3px,  /* bottom-left horizontal */
+                    bottom 3px left 3px;  /* bottom-left vertical */
+            }
         }
     </style>
 </head>
@@ -144,8 +364,8 @@
         <!-- Navbar for Guests (Login & Register) -->
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand navbar-brand-custom" href="{{ url('/') }}">
-                    AnaEvaRec
+                <a class="navbar-brand brand-logo" href="{{ url('/') }}">
+                    WSHA
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarGuest"
@@ -177,8 +397,8 @@
         <!-- Navbar for Authenticated Users (Dashboard, History, User Dropdown) -->
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand navbar-brand-custom" href="{{ route('home') }}">
-                    AnaEvaRec
+                <a class="navbar-brand brand-logo" href="{{ route('home') }} ">
+                    WSHA
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarAuth"
@@ -191,12 +411,12 @@
                     <ul class="navbar-nav navbar-nav-center">
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
-                                Dashboard
+                                DASHBOARD
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('history') ? 'active' : '' }}" href="{{ route('history') }}">
-                                History
+                                HISTORY
                             </a>
                         </li>
                     </ul>

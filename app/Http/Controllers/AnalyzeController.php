@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\HeaderAnalysis;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AnalyzeController extends Controller
 {
@@ -123,7 +125,10 @@ class AnalyzeController extends Controller
                 'description' => 'Enables XSS filtering in browsers',
                 'points' => 8,
                 'check' => function($value) {
-                    return stripos($value, '1') !== false || stripos($value, '1; mode=block') !== false;
+                    $value = strtolower(trim($value));
+                    // Valid values: "1", "1; mode=block", "0" (disabled)
+                    // We want "1" or "1; mode=block" for security
+                    return $value === '1' || $value === '1; mode=block' || $value === '1;mode=block';
                 }
             ],
             'Content-Security-Policy' => [
@@ -211,8 +216,12 @@ class AnalyzeController extends Controller
             $recommendations[] = "Consider hiding or modifying the Server header to avoid revealing server information.";
         }
 
-        // Check for HTTPS
-        if (stripos($url, 'https://') === false) {
+        // Check for HTTPS (now included in scoring)
+        $httpsPoints = 5;
+        $maxScore += $httpsPoints;
+        if (stripos($url, 'https://') !== false) {
+            $score += $httpsPoints;
+        } else {
             $recommendations[] = "Consider using HTTPS instead of HTTP for secure communication.";
             $missing[] = [
                 'header' => 'HTTPS',
@@ -246,36 +255,95 @@ class AnalyzeController extends Controller
     }
 
     /**
-     * Generate screenshot URL using multiple services
+     * Generate screenshot URL using multiple services with fallbacks
+     * Tries ScreenshotOne first, then falls back to free services
      */
     private function generateScreenshotUrl(string $url): ?string
     {
-        $encodedUrl = urlencode($url);
+        // Ensure URL is properly formatted
+        $cleanUrl = trim($url);
+        if (!preg_match('/^https?:\/\//', $cleanUrl)) {
+            $cleanUrl = 'http://' . $cleanUrl;
+        }
         
-        // Try multiple screenshot services
-        // Service 1: Mini.s-shot API (free tier available)
-        $services = [
-            "https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?{$encodedUrl}",
-            // Service 2: FreeScreenshotService
-            "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={$encodedUrl}&screenshot=true",
-            // Service 3: WebPageTest API (requires key but free tier)
-            "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}",
-            // Service 4: PageSpeed Insights screenshot
-            "https://www.googleapis.com/pagespeedonline/v1/runPagespeed?url={$encodedUrl}&screenshot=true",
-        ];
+        $encodedUrl = urlencode($cleanUrl);
         
-        // Return the first service URL (you can implement checking logic here)
-        // For now, return the most reliable free option
-        return "https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?{$encodedUrl}";
+        // Try ScreenshotOne first (if configured)
+        $accessKey = config('services.screenshotone.access_key');
+        $secretKey = config('services.screenshotone.secret_key');
+        
+        if (!empty($accessKey)) {
+            try {
+                // Simplified ScreenshotOne URL - basic parameters that work
+                $apiUrl = 'https://api.screenshotone.com/take';
+                $params = [
+                    'url' => $cleanUrl,
+                    'access_key' => $accessKey,
+                    'viewport_width' => 1920,
+                    'viewport_height' => 1080,
+                    'format' => 'png',
+                ];
+                
+                // Only add signature if secret key is provided
+                if (!empty($secretKey)) {
+                    ksort($params);
+                    $queryString = http_build_query($params);
+                    $signature = hash_hmac('sha256', $queryString, $secretKey);
+                    $params['signature'] = $signature;
+                }
+                
+                $screenshotUrl = $apiUrl . '?' . http_build_query($params);
+                Log::info('Generated ScreenshotOne URL', ['url' => substr($screenshotUrl, 0, 100) . '...']);
+                return $screenshotUrl;
+            } catch (\Exception $e) {
+                Log::warning('ScreenshotOne failed, trying fallback', ['error' => $e->getMessage()]);
+            }
+        }
+        
+        // Fallback services that work reliably
+        // Using multiple services that don't require API keys or have better free tiers
+        
+        // Fallback 1: Thum.io - Simple and reliable (free tier)
+        $thumUrl = "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}";
+        
+        // Fallback 2: PagePeeker - Free screenshot service
+        $pagePeekerUrl = "https://api.pagepeeker.com/v2/thumbs.php?size=x&url={$encodedUrl}";
+        
+        // Fallback 3: Mini.s-shot.ru - Free but slow (as backup)
+        $miniShotUrl = "https://mini.s-shot.ru/1024x768/PNG/1024/?{$encodedUrl}";
+        
+        // Return Thum.io as primary fallback (most reliable)
+        $finalUrl = $thumUrl;
+        
+        Log::info('Using fallback screenshot service', [
+            'original_url' => $url,
+            'clean_url' => $cleanUrl,
+            'screenshot_url' => $finalUrl
+        ]);
+        
+        return $finalUrl;
     }
 
     /**
      * Show details of a specific analysis
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $analysis = HeaderAnalysis::where('user_id', auth()->id())
+        $analysis = HeaderAnalysis::with('user')
+            ->where('user_id', auth()->id())
             ->findOrFail($id);
+
+        if ($request->get('download') === 'pdf') {
+            $pdf = Pdf::loadView('analysis.pdf', [
+                'analysis' => $analysis,
+                'generatedAt' => now()->timezone(config('app.timezone')),
+            ])->setPaper('a4');
+
+            $host = parse_url($analysis->url, PHP_URL_HOST) ?? $analysis->url;
+            $fileName = 'security-report-' . Str::slug($host ?: 'website') . '-' . $analysis->created_at->format('Ymd-His') . '.pdf';
+
+            return $pdf->download($fileName);
+        }
 
         return view('analysis.show', compact('analysis'));
     }

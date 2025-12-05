@@ -26,7 +26,7 @@ class HomeController extends Controller
     {
         $analyses = HeaderAnalysis::where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
-            ->take(10)
+            ->take(3)
             ->get();
 
         // Get latest analysis if just analyzed

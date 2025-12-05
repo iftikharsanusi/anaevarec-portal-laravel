@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'screenshotone' => [
+        'access_key' => env('SCREENSHOTONE_ACCESS_KEY'),
+        'secret_key' => env('SCREENSHOTONE_SECRET_KEY'),
+    ],
+
 ];
