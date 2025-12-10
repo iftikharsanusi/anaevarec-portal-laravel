@@ -229,19 +229,22 @@
                     $headers = $latestAnalysis->headers ?? [];
                     $headersNormalized = array_change_key_case($headers, CASE_LOWER);
                     
-                    // OWASP-style Security Headers (11 total)
+                    // OWASP-style Security Headers (14 total)
                     $expectedSecurityHeaders = [
                         'content-security-policy',
                         'strict-transport-security',
                         'x-frame-options',
                         'x-content-type-options',
-                        'referrer-policy',
                         'permissions-policy',
                         'cross-origin-resource-policy',
+                        'referrer-policy',
+                        'x-xss-protection',
                         'cross-origin-embedder-policy',
                         'cross-origin-opener-policy',
+                        'x-permitted-cross-domain-policies',
                         'expect-ct',
                         'report-to',
+                        'clear-site-data',
                     ];
                     
                     // Count present headers
@@ -260,11 +263,16 @@
                         'Strict-Transport-Security' => 'HSTS',
                         'X-Frame-Options' => 'X-Frame',
                         'X-Content-Type-Options' => 'X-CTO',
-                        'Referrer-Policy' => 'Referrer',
                         'Permissions-Policy' => 'PP',
                         'Cross-Origin-Resource-Policy' => 'CORP',
+                        'Referrer-Policy' => 'Referrer',
+                        'X-XSS-Protection' => 'X-XSS',
                         'Cross-Origin-Embedder-Policy' => 'COEP',
                         'Cross-Origin-Opener-Policy' => 'COOP',
+                        'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
+                        'Expect-CT' => 'Expect-CT',
+                        'Report-To' => 'Report-To',
+                        'Clear-Site-Data' => 'Clear-Site',
                     ];
                     
                     $foundHeaders = [];
@@ -312,27 +320,43 @@
                         <div class="row g-4 align-items-stretch">
                             <div class="col-lg-4">
                                 <div class="border rounded-4 p-3 h-100 bg-light d-flex flex-column justify-content-center">
-                                    @if(!empty($latestAnalysis->screenshot_url))
-                                        <div class="ratio ratio-4x3 rounded-3 overflow-hidden shadow-sm bg-white position-relative">
-                                            <img 
-                                                id="preview-screenshot-img"
-                                                data-screenshot-url="{{ $latestAnalysis->screenshot_url }}"
-                                                src="{{ $latestAnalysis->screenshot_url }}" 
-                                                alt="Website preview of {{ parse_url($latestAnalysis->url, PHP_URL_HOST) ?? $latestAnalysis->url }}" 
-                                                class="w-100 h-100 object-fit-cover"
-                                                loading="lazy"
-                                                onerror="retryScreenshotLoad(this)"
-                                            >
-                                            <div class="d-none position-absolute top-50 start-50 translate-middle text-center text-muted px-3 fallback-preview">
-                                                <span class="fw-semibold d-block">Preview unavailable</span>
-                                                <small class="d-block">Screenshot service failed to load</small>
-                                            </div>
+                                    @php
+                                        $encodedUrl = urlencode($latestAnalysis->url);
+                                        $cleanUrl = $latestAnalysis->url;
+                                        // Use same screenshot services as analysis show page
+                                        $screenshotServices = [
+                                            $latestAnalysis->screenshot_url ?? null,
+                                            "https://image.thum.io/get/width/1200/crop/675/noanimate/{$cleanUrl}", // Thum.io path-based - primary
+                                            "https://image.thum.io/get/width/1200/crop/675/noanimate?url={$encodedUrl}", // Thum.io query-based
+                                            "https://image.thum.io/get/fullpage/width/1200/height/675/noanimate/{$cleanUrl}", // Thum.io full page
+                                        ];
+                                        $previewScreenshotUrl = collect($screenshotServices)->first(fn($url) => !empty($url));
+                                    @endphp
+                                    @if(!empty($previewScreenshotUrl))
+                                    <div class="position-relative" style="display: flex; align-items: center; justify-content: center; padding: 0; background-color: transparent;">
+                                        <img 
+                                            id="preview-screenshot-img"
+                                            data-screenshot-url="{{ $previewScreenshotUrl }}"
+                                            data-screenshot-services='@json($screenshotServices)'
+                                            data-fallback-index="0"
+                                            data-retry-count="0"
+                                            src="{{ $previewScreenshotUrl }}" 
+                                            alt="Website preview of {{ parse_url($latestAnalysis->url, PHP_URL_HOST) ?? $latestAnalysis->url }}" 
+                                            class="img-fluid"
+                                            style="width: 100%; height: auto; object-fit: contain; object-position: center; display: block; max-width: 100%; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;"
+                                            loading="lazy"
+                                            onerror="retryScreenshotLoad(this)"
+                                        >
+                                        <div class="d-none position-absolute top-50 start-50 translate-middle text-center text-muted px-3 fallback-preview" style="z-index: 10; background: rgba(255,255,255,0.9); padding: 1rem; border-radius: 0.5rem;">
+                                            <span class="fw-semibold d-block">Preview unavailable</span>
+                                            <small class="d-block">Screenshot service failed to load</small>
                                         </div>
+                                    </div>
                                     @else
-                                        <div class="bg-white border rounded-3 d-flex flex-column justify-content-center align-items-center w-100 h-100 py-5 text-muted text-center px-3">
-                                            <span class="fw-semibold">No preview available yet</span>
-                                            <small class="text-center">Run a fresh scan to capture a screenshot</small>
-                                        </div>
+                                    <div class="bg-white border rounded-3 d-flex flex-column justify-content-center align-items-center w-100 h-100 py-5 text-muted text-center px-3">
+                                        <span class="fw-semibold">No preview available yet</span>
+                                        <small class="text-center">Run a fresh scan to capture a screenshot</small>
+                                    </div>
                                     @endif
                                 </div>
                             </div>
@@ -385,11 +409,33 @@
                                 </div>
 
                                 @if(is_array($latestAnalysis->missing_security_features) && count($latestAnalysis->missing_security_features) > 0)
+                                    @php
+                                        // Map for missing headers to short forms (for responsive display)
+                                        $missingHeadersMap = [
+                                            'Content Security Policy (CSP)' => 'CSP',
+                                            'Content-Security-Policy' => 'CSP',
+                                            'Permissions Policy' => 'PP',
+                                            'Permissions-Policy' => 'PP',
+                                            'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
+                                            'Cross-Origin-Resource-Policy' => 'CORP',
+                                            'Cross-Origin-Embedder-Policy' => 'COEP',
+                                            'Cross-Origin-Opener-Policy' => 'COOP',
+                                            'Clear-Site-Data' => 'CSD',
+                                            'Expect-CT' => 'Expect-CT',
+                                            'Report-To' => 'Report-To',
+                                            'X-XSS-Protection' => 'X-XSS',
+                                            'HTTPS Protocol' => 'HTTPS',
+                                        ];
+                                    @endphp
                                     <div class="mt-4">
                                         <h6 class="text-uppercase text-muted fw-semibold mb-2">Missing Headers ({{ count($latestAnalysis->missing_security_features) }})</h6>
                                         <div class="d-flex flex-wrap gap-2">
                                             @foreach(array_slice($latestAnalysis->missing_security_features, 0, 5) as $missing)
-                                                <span class="badge rounded-pill bg-danger px-3 py-2">{{ $missing['name'] ?? $missing['header'] }}</span>
+                                                @php
+                                                    $headerName = $missing['name'] ?? $missing['header'] ?? '';
+                                                    $shortForm = $missingHeadersMap[$headerName] ?? $missingHeadersMap[$missing['header'] ?? ''] ?? $headerName;
+                                                @endphp
+                                                <span class="badge rounded-pill bg-danger px-3 py-2">{{ $shortForm }}</span>
                                             @endforeach
                                             @if(count($latestAnalysis->missing_security_features) > 5)
                                                 <span class="badge rounded-pill bg-secondary px-3 py-2">+{{ count($latestAnalysis->missing_security_features) - 5 }} more</span>
@@ -488,47 +534,52 @@
 </div>
 
 <script>
-    // Retry logic for screenshot loading (ScreenshotOne API)
+    // Retry logic for screenshot loading with fallback services
     function retryScreenshotLoad(img) {
-        const maxRetries = 8; // Try up to 8 times
+        const maxRetries = 3; // Try current URL 3 times
         const retryDelay = 2000; // 2 seconds between retries
         let retryCount = parseInt(img.dataset.retryCount || '0');
+        let currentFallbackIndex = parseInt(img.dataset.fallbackIndex || '0');
+        
+        // Get fallback services array from data attribute
+        const screenshotFallbacks = JSON.parse(img.dataset.screenshotServices || '[]');
         const screenshotUrl = img.dataset.screenshotUrl || img.src;
         
-        if (retryCount < maxRetries && screenshotUrl) {
+        // Check if this is a ScreenshotOne URL that failed (likely limit reached)
+        if (screenshotUrl && screenshotUrl.includes('screenshotone.com')) {
+            console.log('ScreenshotOne failed, switching to fallback services immediately');
+            currentFallbackIndex = 1; // Skip to first fallback
+            retryCount = maxRetries; // Don't retry ScreenshotOne
+            img.dataset.fallbackIndex = currentFallbackIndex;
+        }
+        
+        // First, retry the same URL multiple times (for async services) - but not for ScreenshotOne errors
+        if (retryCount < maxRetries && currentFallbackIndex === 0 && !screenshotUrl.includes('screenshotone.com')) {
             retryCount++;
             img.dataset.retryCount = retryCount;
             
-            // Add timestamp to bypass cache and retry
-            const separator = screenshotUrl.includes('?') ? '&' : '?';
-            const retryUrl = screenshotUrl.split('?')[0] + separator + '_retry=' + retryCount + '&_t=' + Date.now();
-            
-            setTimeout(function() {
-                // Create new image to test if it loads
-                const testImg = new Image();
-                testImg.onload = function() {
-                    img.src = retryUrl;
-                    img.classList.remove('d-none');
-                };
-                testImg.onerror = function() {
-                    if (retryCount < maxRetries) {
-                        retryScreenshotLoad(img);
-                    } else {
-                        // Max retries reached, show fallback
-                        img.classList.add('d-none');
-                        const fallback = img.nextElementSibling;
-                        if (fallback && fallback.classList.contains('fallback-preview')) {
-                            fallback.classList.remove('d-none');
-                        }
-                    }
-                };
-                testImg.src = retryUrl;
-            }, retryDelay);
+            if (screenshotUrl) {
+                console.log(`Retrying screenshot load (attempt ${retryCount}/${maxRetries})`);
+                setTimeout(function() {
+                    img.src = screenshotUrl;
+                }, retryDelay);
+                return;
+            }
+        }
+        
+        // If retries exhausted or ScreenshotOne failed, try next fallback service
+        currentFallbackIndex++;
+        if (currentFallbackIndex < screenshotFallbacks.length && screenshotFallbacks[currentFallbackIndex]) {
+            retryCount = 0; // Reset retry count for new service
+            img.dataset.fallbackIndex = currentFallbackIndex;
+            img.dataset.retryCount = 0;
+            console.log(`Trying fallback service ${currentFallbackIndex + 1}`);
+            img.src = screenshotFallbacks[currentFallbackIndex];
         } else {
-            // Max retries reached, show fallback
+            // All fallbacks exhausted, show fallback message
             img.classList.add('d-none');
-            const fallback = img.nextElementSibling;
-            if (fallback && fallback.classList.contains('fallback-preview')) {
+            const fallback = img.parentElement.querySelector('.fallback-preview');
+            if (fallback) {
                 fallback.classList.remove('d-none');
             }
         }

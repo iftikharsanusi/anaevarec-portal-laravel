@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\HeaderAnalysis;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -76,10 +78,50 @@ class AnalyzeController extends Controller
                 ->with('success', 'Headers analyzed successfully!')
                 ->with('analysis_id', $headerAnalysis->id);
 
-        } catch (\Exception $e) {
-            Log::error('Header analysis error: ' . $e->getMessage());
+        } catch (ConnectionException $e) {
+            // Network connection errors (DNS, timeout, unreachable)
+            Log::error('Header analysis connection error: ' . $e->getMessage(), [
+                'url' => $url,
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->route('home')
-                ->with('error', 'An error occurred while analyzing the URL: ' . $e->getMessage());
+                ->with('error', 'Unable to connect to the website. Please check if the URL is correct and the website is accessible.');
+        } catch (RequestException $e) {
+            // HTTP request errors
+            Log::error('Header analysis request error: ' . $e->getMessage(), [
+                'url' => $url,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('home')
+                ->with('error', 'Unable to fetch headers from the website. The website may be temporarily unavailable or blocking requests.');
+        } catch (\Exception $e) {
+            // Generic errors - hide technical details
+            Log::error('Header analysis error: ' . $e->getMessage(), [
+                'url' => $url,
+                'exception' => get_class($e),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Check for common error patterns and provide user-friendly messages
+            $errorMessage = $e->getMessage();
+            if (stripos($errorMessage, 'resolve host') !== false || 
+                stripos($errorMessage, 'could not resolve') !== false ||
+                stripos($errorMessage, 'name or service not known') !== false) {
+                return redirect()->route('home')
+                    ->with('error', 'The website URL could not be found. Please verify the URL is correct and try again.');
+            } elseif (stripos($errorMessage, 'timeout') !== false || 
+                      stripos($errorMessage, 'timed out') !== false) {
+                return redirect()->route('home')
+                    ->with('error', 'The request timed out. The website may be slow or unavailable. Please try again later.');
+            } elseif (stripos($errorMessage, 'connection') !== false || 
+                      stripos($errorMessage, 'refused') !== false) {
+                return redirect()->route('home')
+                    ->with('error', 'Unable to connect to the website. Please check if the URL is correct and the website is accessible.');
+            } else {
+                // Generic error message for any other errors
+                return redirect()->route('home')
+                    ->with('error', 'An error occurred while analyzing the website. Please verify the URL is correct and try again.');
+            }
         }
     }
 
@@ -94,11 +136,21 @@ class AnalyzeController extends Controller
         $maxScore = 0;
 
         // Common security headers to check
+        // Scoring prioritizes standard/essential headers so websites with basic security get reasonable scores
         $securityHeaders = [
+            // ESSENTIAL HEADERS (82 points) - Standard implementation
+            'Content-Security-Policy' => [
+                'name' => 'Content Security Policy (CSP)',
+                'description' => 'Prevents XSS and injection attacks',
+                'points' => 25, // Increased - Most critical header
+                'check' => function($value) {
+                    return !empty($value);
+                }
+            ],
             'Strict-Transport-Security' => [
                 'name' => 'HSTS (HTTP Strict Transport Security)',
                 'description' => 'Forces browsers to use HTTPS connections',
-                'points' => 15,
+                'points' => 18, // Increased - Very important
                 'check' => function($value) {
                     return stripos($value, 'max-age') !== false;
                 }
@@ -106,7 +158,7 @@ class AnalyzeController extends Controller
             'X-Frame-Options' => [
                 'name' => 'X-Frame-Options',
                 'description' => 'Prevents clickjacking attacks',
-                'points' => 10,
+                'points' => 12, // Increased - Standard security
                 'check' => function($value) {
                     $value = strtolower($value);
                     return in_array($value, ['deny', 'sameorigin']) || stripos($value, 'allow-from') !== false;
@@ -115,26 +167,15 @@ class AnalyzeController extends Controller
             'X-Content-Type-Options' => [
                 'name' => 'X-Content-Type-Options',
                 'description' => 'Prevents MIME type sniffing',
-                'points' => 10,
+                'points' => 12, // Increased - Standard security
                 'check' => function($value) {
                     return strtolower($value) === 'nosniff';
                 }
             ],
-            'X-XSS-Protection' => [
-                'name' => 'X-XSS-Protection',
-                'description' => 'Enables XSS filtering in browsers',
-                'points' => 8,
-                'check' => function($value) {
-                    $value = strtolower(trim($value));
-                    // Valid values: "1", "1; mode=block", "0" (disabled)
-                    // We want "1" or "1; mode=block" for security
-                    return $value === '1' || $value === '1; mode=block' || $value === '1;mode=block';
-                }
-            ],
-            'Content-Security-Policy' => [
-                'name' => 'Content Security Policy (CSP)',
-                'description' => 'Prevents XSS and injection attacks',
-                'points' => 20,
+            'Permissions-Policy' => [
+                'name' => 'Permissions Policy',
+                'description' => 'Controls browser features and APIs',
+                'points' => 10, // Standard - Important
                 'check' => function($value) {
                     return !empty($value);
                 }
@@ -142,39 +183,82 @@ class AnalyzeController extends Controller
             'Referrer-Policy' => [
                 'name' => 'Referrer Policy',
                 'description' => 'Controls referrer information',
-                'points' => 8,
+                'points' => 5, // Increased - Good practice
                 'check' => function($value) {
                     return !empty($value);
                 }
             ],
-            'Permissions-Policy' => [
-                'name' => 'Permissions Policy',
-                'description' => 'Controls browser features and APIs',
-                'points' => 10,
+            // IMPORTANT HEADERS (7 points) - Recommended but not critical
+            'X-XSS-Protection' => [
+                'name' => 'X-XSS-Protection',
+                'description' => 'Enables XSS filtering in browsers',
+                'points' => 4, // Standard - Legacy but still useful
                 'check' => function($value) {
-                    return !empty($value);
+                    $value = strtolower(trim($value));
+                    // Valid values: "1", "1; mode=block", "0" (disabled)
+                    // We want "1" or "1; mode=block" for security
+                    return $value === '1' || $value === '1; mode=block' || $value === '1;mode=block';
                 }
             ],
             'X-Permitted-Cross-Domain-Policies' => [
                 'name' => 'X-Permitted-Cross-Domain-Policies',
                 'description' => 'Controls cross-domain policy files',
-                'points' => 5,
+                'points' => 3, // Reduced - Less critical
                 'check' => function($value) {
                     return !empty($value);
+                }
+            ],
+            // ADVANCED HEADERS (11 points) - Modern/optional headers
+            'Cross-Origin-Resource-Policy' => [
+                'name' => 'Cross-Origin-Resource-Policy',
+                'description' => 'Controls how the browser handles cross-origin resource requests',
+                'points' => 2, // Reduced - Advanced feature
+                'check' => function($value) {
+                    $value = strtolower(trim($value));
+                    // Valid values: "same-origin", "same-site", "cross-origin"
+                    return in_array($value, ['same-origin', 'same-site', 'cross-origin']);
+                }
+            ],
+            'Cross-Origin-Embedder-Policy' => [
+                'name' => 'Cross-Origin-Embedder-Policy',
+                'description' => 'Prevents loading cross-origin resources without explicit permission',
+                'points' => 1, // Reduced - Advanced feature
+                'check' => function($value) {
+                    $value = strtolower(trim($value));
+                    // Valid values: "unsafe-none", "require-corp", "credentialless"
+                    return in_array($value, ['unsafe-none', 'require-corp', 'credentialless']);
+                }
+            ],
+            'Cross-Origin-Opener-Policy' => [
+                'name' => 'Cross-Origin-Opener-Policy',
+                'description' => 'Isolates browsing context by preventing cross-origin window access',
+                'points' => 1, // Reduced - Advanced feature
+                'check' => function($value) {
+                    $value = strtolower(trim($value));
+                    // Valid values: "unsafe-none", "same-origin-allow-popups", "same-origin"
+                    return in_array($value, ['unsafe-none', 'same-origin-allow-popups', 'same-origin']);
                 }
             ],
             'Expect-CT' => [
                 'name' => 'Expect-CT',
                 'description' => 'Certificate Transparency monitoring',
-                'points' => 5,
+                'points' => 1, // Reduced - Optional
                 'check' => function($value) {
                     return stripos($value, 'enforce') !== false || stripos($value, 'report-uri') !== false;
+                }
+            ],
+            'Report-To' => [
+                'name' => 'Report-To',
+                'description' => 'Specifies endpoints for reporting API violations',
+                'points' => 1, // Standard - Optional
+                'check' => function($value) {
+                    return !empty($value);
                 }
             ],
             'Clear-Site-Data' => [
                 'name' => 'Clear-Site-Data',
                 'description' => 'Clears browsing data',
-                'points' => 4,
+                'points' => 0, // Informational only
                 'check' => function($value) {
                     return !empty($value);
                 }
@@ -266,15 +350,25 @@ class AnalyzeController extends Controller
             $cleanUrl = 'http://' . $cleanUrl;
         }
         
+        // Validate URL format
+        if (!filter_var($cleanUrl, FILTER_VALIDATE_URL)) {
+            Log::warning('Invalid URL provided for screenshot', ['url' => $url, 'clean_url' => $cleanUrl]);
+            return null;
+        }
+        
         $encodedUrl = urlencode($cleanUrl);
         
-        // Try ScreenshotOne first (if configured)
+        // Option to use only free services (set SCREENSHOTONE_DISABLE=true in .env)
+        // For now, skip ScreenshotOne since both keys hit limits - use free services directly
+        $useFreeServicesOnly = config('services.screenshotone.disable', true); // Default to true to use free services
+        
+        // Try ScreenshotOne first (if configured and not disabled)
         $accessKey = config('services.screenshotone.access_key');
         $secretKey = config('services.screenshotone.secret_key');
         
-        if (!empty($accessKey)) {
+        if (!empty($accessKey) && !$useFreeServicesOnly) {
             try {
-                // Simplified ScreenshotOne URL - basic parameters that work
+                // ScreenshotOne API URL - using minimal required parameters
                 $apiUrl = 'https://api.screenshotone.com/take';
                 $params = [
                     'url' => $cleanUrl,
@@ -282,6 +376,7 @@ class AnalyzeController extends Controller
                     'viewport_width' => 1920,
                     'viewport_height' => 1080,
                     'format' => 'png',
+                    'image_quality' => 80,
                 ];
                 
                 // Only add signature if secret key is provided
@@ -293,32 +388,58 @@ class AnalyzeController extends Controller
                 }
                 
                 $screenshotUrl = $apiUrl . '?' . http_build_query($params);
-                Log::info('Generated ScreenshotOne URL', ['url' => substr($screenshotUrl, 0, 100) . '...']);
+                
+                // Return ScreenshotOne URL
+                // Note: If ScreenshotOne limit is reached, the JavaScript will detect the error
+                // and automatically fall back to alternative services
+                Log::info('Generated ScreenshotOne URL', [
+                    'original_url' => $cleanUrl,
+                    'service' => 'ScreenshotOne',
+                    'note' => 'JavaScript will fallback if limit reached'
+                ]);
                 return $screenshotUrl;
             } catch (\Exception $e) {
-                Log::warning('ScreenshotOne failed, trying fallback', ['error' => $e->getMessage()]);
+                Log::warning('ScreenshotOne URL generation failed, trying fallback', [
+                    'error' => $e->getMessage(),
+                    'url' => $cleanUrl
+                ]);
             }
+        } else {
+            Log::info('ScreenshotOne not configured, using fallback service', ['url' => $cleanUrl]);
         }
         
         // Fallback services that work reliably
         // Using multiple services that don't require API keys or have better free tiers
         
-        // Fallback 1: Thum.io - Simple and reliable (free tier)
-        $thumUrl = "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}";
+        // Free screenshot services - no API keys required
+        // Thum.io is working and reliable (tested and confirmed)
         
-        // Fallback 2: PagePeeker - Free screenshot service
-        $pagePeekerUrl = "https://api.pagepeeker.com/v2/thumbs.php?size=x&url={$encodedUrl}";
+        // Primary: Thum.io path-based - Free, working, reliable
+        $thumIoPathUrl = "https://image.thum.io/get/width/1200/crop/675/noanimate/{$cleanUrl}";
         
-        // Fallback 3: Mini.s-shot.ru - Free but slow (as backup)
-        $miniShotUrl = "https://mini.s-shot.ru/1024x768/PNG/1024/?{$encodedUrl}";
+        // Alternative: Thum.io query-based (backup)
+        $thumIoQueryUrl = "https://image.thum.io/get/width/1200/crop/675/noanimate?url={$encodedUrl}";
         
-        // Return Thum.io as primary fallback (most reliable)
-        $finalUrl = $thumUrl;
+        // Alternative sizes for Thum.io
+        $thumIoFullPage = "https://image.thum.io/get/fullpage/width/1200/height/675/noanimate/{$cleanUrl}";
         
-        Log::info('Using fallback screenshot service', [
+        // Use Thum.io as primary (free, working, actually captures the website)
+        $finalUrl = $thumIoPathUrl;
+        
+        $screenshotOptions = [
+            $thumIoPathUrl,
+            $thumIoQueryUrl,
+            $thumIoFullPage,
+        ];
+        
+        Log::info('Using free screenshot service (Thum.io)', [
             'original_url' => $url,
             'clean_url' => $cleanUrl,
-            'screenshot_url' => $finalUrl
+            'encoded_url' => $encodedUrl,
+            'service' => 'Thum.io',
+            'screenshot_url' => $finalUrl,
+            'all_options' => $screenshotOptions,
+            'note' => 'Free service - tested and working'
         ]);
         
         return $finalUrl;
@@ -346,5 +467,65 @@ class AnalyzeController extends Controller
         }
 
         return view('analysis.show', compact('analysis'));
+    }
+
+    /**
+     * Test screenshot service - useful for debugging
+     */
+    public function testScreenshot(Request $request)
+    {
+        $testUrl = $request->input('url', 'https://example.com');
+        $screenshotUrl = $this->generateScreenshotUrl($testUrl);
+        
+        // Test if the URL is accessible
+        $isAccessible = false;
+        $errorMessage = null;
+        
+        if ($screenshotUrl) {
+            try {
+                $response = Http::timeout(10)->head($screenshotUrl);
+                $isAccessible = $response->successful();
+                
+                if (!$isAccessible) {
+                    // Try GET request
+                    $response = Http::timeout(10)->get($screenshotUrl);
+                    $isAccessible = $response->successful();
+                    $errorMessage = $response->status() . ': ' . ($response->body() ?: 'No response body');
+                }
+            } catch (\Exception $e) {
+                $errorMessage = $e->getMessage();
+            }
+        }
+        
+        return response()->json([
+            'test_url' => $testUrl,
+            'screenshot_url' => $screenshotUrl,
+            'service_used' => $this->getServiceName($screenshotUrl),
+            'is_accessible' => $isAccessible,
+            'error' => $errorMessage,
+            'screenshotone_configured' => !empty(config('services.screenshotone.access_key')),
+        ]);
+    }
+
+    /**
+     * Get the name of the service being used based on URL
+     */
+    private function getServiceName(?string $url): string
+    {
+        if (empty($url)) {
+            return 'None';
+        }
+        
+        if (strpos($url, 'screenshotone.com') !== false) {
+            return 'ScreenshotOne';
+        } elseif (strpos($url, 'pagepeeker.com') !== false) {
+            return 'PagePeeker (Fallback)';
+        } elseif (strpos($url, 'thum.io') !== false) {
+            return 'Thum.io (Fallback)';
+        } elseif (strpos($url, 's-shot.ru') !== false) {
+            return 'Mini.s-shot.ru (Fallback)';
+        }
+        
+        return 'Unknown';
     }
 }

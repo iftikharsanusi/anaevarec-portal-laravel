@@ -38,6 +38,7 @@ return [
     'screenshotone' => [
         'access_key' => env('SCREENSHOTONE_ACCESS_KEY'),
         'secret_key' => env('SCREENSHOTONE_SECRET_KEY'),
+        'disable' => env('SCREENSHOTONE_DISABLE', false), // Set to true to disable ScreenshotOne and use free services
     ],
 
 ];

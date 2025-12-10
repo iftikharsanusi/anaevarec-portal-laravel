@@ -73,6 +73,7 @@
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -84,7 +85,7 @@
         /* ======================= NAVBAR CUSTOM STYLES ======================= */
 
         .brand-logo {
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            font-family: 'Rubik', sans-serif;
             font-weight: 700;
             font-size: 1.85rem;
             letter-spacing: -0.025em;
@@ -129,6 +130,7 @@
 
         /* Nav links style (Dashboard & History) */
         .navbar-nav-center .nav-link {
+            font-family: 'Rubik', sans-serif;
             font-weight: 600;
             font-size: 1.1rem;
             color: #333 !important;
@@ -144,11 +146,13 @@
 
         /* User dropdown (Logout section) */
         .navbar-nav.ms-auto .nav-link {
+            font-family: 'Rubik', sans-serif;
             font-weight: 600;
             font-size: 1.05rem;
         }
 
         .dropdown-item {
+            font-family: 'Rubik', sans-serif;
             font-weight: 500;
             font-size: 0.95rem;
             padding: 0.625rem 1.25rem;
@@ -202,6 +206,7 @@
 
         /* Guest Navbar - Bracket-style Login and Register buttons */
         #navbarGuest .nav-link {
+            font-family: 'Rubik', sans-serif;
             font-weight: 600;
             font-size: 1.15rem;
             padding: 0.75rem 2rem !important;
@@ -417,6 +422,11 @@
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('history') ? 'active' : '' }}" href="{{ route('history') }}">
                                 HISTORY
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('analytics') ? 'active' : '' }}" href="{{ route('analytics') }}">
+                                ANALYTICS
                             </a>
                         </li>
                     </ul>

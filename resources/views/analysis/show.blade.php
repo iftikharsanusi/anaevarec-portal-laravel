@@ -41,6 +41,23 @@
         'cross-origin-opener-policy' => 'COOP',
     ];
 
+    // Map for missing headers to short forms (for responsive display)
+    $missingHeadersMap = [
+        'Content Security Policy (CSP)' => 'CSP',
+        'Content-Security-Policy' => 'CSP',
+        'Permissions Policy' => 'PP',
+        'Permissions-Policy' => 'PP',
+        'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
+        'Cross-Origin-Resource-Policy' => 'CORP',
+        'Cross-Origin-Embedder-Policy' => 'COEP',
+        'Cross-Origin-Opener-Policy' => 'COOP',
+        'Clear-Site-Data' => 'CSD',
+        'Expect-CT' => 'Expect-CT',
+        'Report-To' => 'Report-To',
+        'X-XSS-Protection' => 'X-XSS',
+        'HTTPS Protocol' => 'HTTPS',
+    ];
+
     // OWASP-style Security Header Weights (Total = 100)
     $expectedSecurityHeaders = [
         'content-security-policy' => [
@@ -51,52 +68,67 @@
         'strict-transport-security' => [
             'label' => 'Strict-Transport-Security',
             'description' => 'Forces browsers to use HTTPS connections.',
-            'weight' => 15,
+            'weight' => 18,
         ],
         'x-frame-options' => [
             'label' => 'X-Frame-Options',
             'description' => 'Protects against clickjacking by controlling iframe usage.',
-            'weight' => 10,
+            'weight' => 12,
         ],
         'x-content-type-options' => [
             'label' => 'X-Content-Type-Options',
             'description' => 'Prevents MIME-type sniffing for scripts and styles.',
-            'weight' => 10,
-        ],
-        'referrer-policy' => [
-            'label' => 'Referrer-Policy',
-            'description' => 'Controls how much referrer information is sent.',
-            'weight' => 10,
+            'weight' => 12,
         ],
         'permissions-policy' => [
             'label' => 'Permissions-Policy',
             'description' => 'Restricts access to powerful browser features.',
             'weight' => 10,
         ],
+        'referrer-policy' => [
+            'label' => 'Referrer-Policy',
+            'description' => 'Controls how much referrer information is sent.',
+            'weight' => 5,
+        ],
+        'x-xss-protection' => [
+            'label' => 'X-XSS-Protection',
+            'description' => 'Enables XSS filtering in browsers.',
+            'weight' => 4,
+        ],
+        'x-permitted-cross-domain-policies' => [
+            'label' => 'X-Permitted-Cross-Domain-Policies',
+            'description' => 'Controls cross-domain policy files.',
+            'weight' => 3,
+        ],
         'cross-origin-resource-policy' => [
             'label' => 'Cross-Origin-Resource-Policy',
             'description' => 'Controls how the browser handles cross-origin resource requests.',
-            'weight' => 5,
+            'weight' => 2,
         ],
         'cross-origin-embedder-policy' => [
             'label' => 'Cross-Origin-Embedder-Policy',
             'description' => 'Prevents a document from loading cross-origin resources that don\'t explicitly grant permission.',
-            'weight' => 5,
+            'weight' => 1,
         ],
         'cross-origin-opener-policy' => [
             'label' => 'Cross-Origin-Opener-Policy',
             'description' => 'Isolates browsing context by preventing other origins from accessing the window object.',
-            'weight' => 5,
+            'weight' => 1,
         ],
         'expect-ct' => [
             'label' => 'Expect-CT',
             'description' => 'Enforces Certificate Transparency compliance.',
-            'weight' => 5,
+            'weight' => 1,
         ],
         'report-to' => [
             'label' => 'Report-To',
             'description' => 'Specifies endpoints for reporting API violations.',
-            'weight' => 5,
+            'weight' => 1,
+        ],
+        'clear-site-data' => [
+            'label' => 'Clear-Site-Data',
+            'description' => 'Clears browsing data when specified.',
+            'weight' => 0,
         ],
     ];
 
@@ -165,7 +197,10 @@
     $missingHeadersList = [];
     if (is_array($analysis->missing_security_features)) {
         foreach ($analysis->missing_security_features as $missing) {
-            $missingHeadersList[] = $missing['name'] ?? $missing['header'] ?? 'Security Header';
+            $headerName = $missing['name'] ?? $missing['header'] ?? 'Security Header';
+            // Use short form if available, otherwise use the full name
+            $shortForm = $missingHeadersMap[$headerName] ?? $missingHeadersMap[$missing['header'] ?? ''] ?? $headerName;
+            $missingHeadersList[] = $shortForm;
         }
     }
 
@@ -173,12 +208,14 @@
     $missingOverflowCount = max(count($missingHeadersList) - count($displayMissingHeaders), 0);
 
     $encodedUrl = urlencode($analysis->url);
-    // Multiple fallback services for reliability
+    $cleanUrl = $analysis->url;
+    // Multiple fallback services - prioritize Thum.io (free, working, reliable)
+    // Thum.io is tested and confirmed working
     $screenshotServices = [
         $analysis->screenshot_url ?? null,
-        "https://image.thum.io/get/width/1200/crop/675/noanimate/{$encodedUrl}",
-        "https://api.pagepeeker.com/v2/thumbs.php?size=x&url={$encodedUrl}",
-        "https://mini.s-shot.ru/1024x768/PNG/1024/?{$encodedUrl}",
+        "https://image.thum.io/get/width/1200/crop/675/noanimate/{$cleanUrl}", // Thum.io path-based - primary
+        "https://image.thum.io/get/width/1200/crop/675/noanimate?url={$encodedUrl}", // Thum.io query-based
+        "https://image.thum.io/get/fullpage/width/1200/height/675/noanimate/{$cleanUrl}", // Thum.io full page
     ];
     $screenshotUrl = collect($screenshotServices)->first(fn($url) => !empty($url));
 @endphp
@@ -196,10 +233,23 @@
     /* Screenshot styling */
     #screenshot-img {
         width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
+        height: auto !important;
+        object-fit: contain !important;
         object-position: center !important;
         display: block !important;
+        max-width: 100%;
+        margin: 0 auto;
+        border-radius: 8px;
+    }
+    
+    /* Container for screenshot to maintain aspect ratio */
+    .screenshot-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        background-color: transparent;
+        padding: 0;
         min-height: 300px;
     }
 
@@ -384,21 +434,21 @@
                 </div>
 
                 <div class="col-lg-4">
-                    <div class="h-100 border rounded-4 bg-white p-3">
-                        <div class="text-uppercase small text-muted fw-semibold mb-2">Website Preview</div>
-                        <div class="rounded-3 overflow-hidden position-relative" style="min-height: 300px; background-color: #f8f9fa;">
+                    <div class="h-100 border rounded-4 bg-white p-3 d-flex flex-column align-items-center">
+                        <div class="text-uppercase small text-muted fw-semibold mb-2 text-center">Website Preview</div>
+                        <div class="screenshot-container position-relative flex-grow-1 d-flex align-items-center justify-content-center w-100">
                             @if(!empty($screenshotUrl))
                             <img
                                 id="screenshot-img"
                                 data-screenshot-url="{{ $screenshotUrl }}"
                                 src="{{ $screenshotUrl }}"
                                 alt="Website Screenshot for {{ $analysis->url }}"
-                                class="img-fluid w-100 h-100"
-                                style="object-fit: cover; width: 100%; height: 100%; display: block;"
+                                class="img-fluid"
                                 onerror="handleScreenshotError(this)"
+                                loading="lazy"
                             >
                             @else
-                            <div class="h-100 w-100 d-flex flex-column align-items-center justify-content-center text-muted" style="background-color: #f8f9fa;">
+                            <div class="h-100 w-100 d-flex flex-column align-items-center justify-content-center text-muted" style="background-color: transparent; min-height: 300px;">
                                 <div style="font-size: 2.5rem;">🌐</div>
                                 <div class="mt-2 fw-semibold text-center px-3">Screenshot unavailable</div>
                                 <div class="small text-center px-3">{{ $analysis->url }}</div>
@@ -416,7 +466,7 @@
                             ></iframe>
                             <div id="screenshot-placeholder"
                                  class="d-none h-100 w-100 position-absolute top-0 start-0 d-flex flex-column align-items-center justify-content-center text-muted"
-                                 style="background-color: #f8f9fa;">
+                                 style="background-color: transparent; min-height: 300px;">
                                 <div style="font-size: 2.5rem;">🌐</div>
                                 <div class="mt-2 fw-semibold text-center px-3">Screenshot unavailable</div>
                                 <div class="small text-center px-3">{{ $analysis->url }}</div>
@@ -444,17 +494,15 @@
                 <div class="row g-3">
                     @foreach($presentHeadersDetails as $header)
                         <div class="col-12 col-md-6">
-                            <div class="rounded-4 p-3" style="background-color: rgba(25,135,84,0.08); border: 1px solid rgba(25,135,84,0.3);">
-                                <div class="d-flex justify-content-between flex-wrap gap-2">
-                                    <div class="flex-grow-1" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        <div class="fw-bold text-success mb-1" style="word-break: break-word;">{{ $header['label'] }}</div>
-                                        @if(!empty($header['description']))
-                                            <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
-                                                {{ $header['description'] }}
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <span class="badge bg-success align-self-start flex-shrink-0">Present</span>
+                            <div class="rounded-4 p-3 position-relative" style="background-color: rgba(25,135,84,0.08); border: 1px solid rgba(25,135,84,0.3);">
+                                <span class="badge bg-success position-absolute top-0 end-0" style="margin: 12px;">Present</span>
+                                <div style="padding-right: 80px;">
+                                    <div class="fw-bold text-success mb-1" style="word-break: break-word;">{{ $header['label'] }}</div>
+                                    @if(!empty($header['description']))
+                                        <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                            {{ $header['description'] }}
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -485,21 +533,13 @@
                             $missingDescription = $missing['description'] ?? 'No description provided.';
                         @endphp
                         <div class="col-12 col-md-6">
-                            <div class="rounded-4 p-3 h-100" style="background-color: rgba(220,53,69,0.08); border: 1px solid rgba(220,53,69,0.3);">
-                                <div class="d-flex justify-content-between flex-wrap gap-2">
-                                    <div class="flex-grow-1" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        <div class="fw-bold text-danger mb-1" style="word-break: break-word;">{{ $missingName }}</div>
-                                        <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
-                                            {{ $missingDescription }}
-                                        </div>
-                                        @if(isset($missing['current_value']))
-                                            <div class="small text-muted" style="word-break: break-word; overflow-wrap: break-word;">
-                                                <strong>Current Value:</strong>
-                                                <code style="word-break: break-all;">{{ $missing['current_value'] }}</code>
-                                            </div>
-                                        @endif
+                            <div class="rounded-4 p-3 h-100 position-relative" style="background-color: rgba(220,53,69,0.08); border: 1px solid rgba(220,53,69,0.3);">
+                                <span class="badge bg-danger position-absolute top-0 end-0" style="margin: 12px;">Missing</span>
+                                <div style="padding-right: 80px;">
+                                    <div class="fw-bold text-danger mb-1" style="word-break: break-word;">{{ $missingName }}</div>
+                                    <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                        {{ $missingDescription }}
                                     </div>
-                                    <span class="badge bg-danger align-self-start flex-shrink-0">Missing</span>
                                 </div>
                             </div>
                         </div>
@@ -578,19 +618,19 @@
             <div class="p-4 d-flex flex-column">
                 <!-- Security Description with Better Layout -->
                 <div class="mb-4">
-                    <p class="mb-0" style="line-height: 1.75; font-size: 1rem; color: #374151; font-weight: 400;">
+                    <p class="mb-0" style="line-height: 1.75; font-size: 1rem; color: #374151; font-weight: 400; text-align: justify;">
                         @if($analysis->security_score >= 85)
-                            This website demonstrates <strong class="text-success" style="font-weight: 600;">excellent security practices</strong> (Grade A) with a comprehensive set of security headers in place. The implementation shows strong protection against common web vulnerabilities including clickjacking, XSS attacks, and MIME-type sniffing. The security configuration indicates a well-maintained and security-conscious approach to web application development.
+                            This website demonstrates <strong class="text-success" style="font-weight: 600;">excellent security practices</strong> with a comprehensive set of security headers in place. The implementation shows strong protection against common web vulnerabilities including clickjacking, XSS attacks, and MIME-type sniffing. The security configuration indicates a well-maintained and security-conscious approach to web application development.
                         @elseif($analysis->security_score >= 70)
-                            This website shows <strong class="text-success" style="font-weight: 600;">good security posture</strong> (Grade B) with most critical security headers implemented. While the current configuration provides solid protection against many common threats, there are opportunities to enhance security further by implementing additional recommended headers. The existing security measures demonstrate a proactive approach to web security.
+                            This website shows <strong class="text-success" style="font-weight: 600;">good security posture</strong> with most critical security headers implemented. While the current configuration provides solid protection against many common threats, there are opportunities to enhance security further by implementing additional recommended headers. The existing security measures demonstrate a proactive approach to web security.
                         @elseif($analysis->security_score >= 55)
-                            This website has a <strong class="text-warning" style="font-weight: 600;">fair security posture</strong> (Grade C) with some essential security headers in place. However, several important security headers are missing, which could leave the site vulnerable to certain types of attacks. Implementing the missing headers would significantly improve the overall security and provide better protection against modern web threats.
+                            This website has a <strong class="text-warning" style="font-weight: 600;">fair security posture</strong> with some essential security headers in place. However, several important security headers are missing, which could leave the site vulnerable to certain types of attacks. Implementing the missing headers would significantly improve the overall security and provide better protection against modern web threats.
                         @elseif($analysis->security_score >= 40)
-                            This website has a <strong class="text-warning" style="font-weight: 600;">weak security posture</strong> (Grade D) with limited security headers implemented. Multiple critical security headers are missing, which increases the risk of various web-based attacks including clickjacking, XSS, and data injection. Immediate action is recommended to implement the missing security headers to reduce vulnerability exposure.
+                            This website has a <strong class="text-warning" style="font-weight: 600;">weak security posture</strong> with limited security headers implemented. Multiple critical security headers are missing, which increases the risk of various web-based attacks including clickjacking, XSS, and data injection. Immediate action is recommended to implement the missing security headers to reduce vulnerability exposure.
                         @elseif($analysis->security_score >= 25)
-                            This website has a <strong class="text-danger" style="font-weight: 600;">poor security posture</strong> (Grade E) with very few security headers implemented. The site is vulnerable to a wide range of attacks including clickjacking, XSS, MIME-type sniffing, and more. The lack of proper security headers exposes the website and its users to significant risks. Urgent implementation of security headers is strongly recommended.
+                            This website has a <strong class="text-danger" style="font-weight: 600;">poor security posture</strong> with very few security headers implemented. The site is vulnerable to a wide range of attacks including clickjacking, XSS, MIME-type sniffing, and more. The lack of proper security headers exposes the website and its users to significant risks. Urgent implementation of security headers is strongly recommended.
                         @else
-                            This website has <strong class="text-danger" style="font-weight: 600;">failed security standards</strong> (Grade F) with no or minimal security headers implemented. The site is highly vulnerable to attacks including clickjacking, XSS, MIME-type sniffing, and more. The complete absence of proper security headers exposes the website and its users to critical risks. Immediate and comprehensive implementation of security headers is essential to protect against common web vulnerabilities.
+                            This website has <strong class="text-danger" style="font-weight: 600;">failed security standards</strong> with no or minimal security headers implemented. The site is highly vulnerable to attacks including clickjacking, XSS, MIME-type sniffing, and more. The complete absence of proper security headers exposes the website and its users to critical risks. Immediate and comprehensive implementation of security headers is essential to protect against common web vulnerabilities.
                         @endif
                     </p>
                 </div>
@@ -752,10 +792,18 @@
     const retryDelay = 2000; // 2 seconds
 
     function handleScreenshotError(img) {
-        // First, retry the same URL multiple times (for async services)
-        if (retryCount < maxRetries && currentFallbackIndex === 0) {
+        const screenshotUrl = img.dataset.screenshotUrl || img.src;
+        
+        // Check if this is a ScreenshotOne URL that failed (likely limit reached)
+        if (screenshotUrl && screenshotUrl.includes('screenshotone.com')) {
+            console.log('ScreenshotOne failed, switching to fallback services immediately');
+            currentFallbackIndex = 1; // Skip to first fallback
+            retryCount = maxRetries; // Don't retry ScreenshotOne
+        }
+        
+        // First, retry the same URL multiple times (for async services) - but not for ScreenshotOne errors
+        if (retryCount < maxRetries && currentFallbackIndex === 0 && !screenshotUrl.includes('screenshotone.com')) {
             retryCount++;
-            const screenshotUrl = img.dataset.screenshotUrl || img.src;
             if (screenshotUrl) {
                 console.log(`Retrying screenshot load (attempt ${retryCount}/${maxRetries})`);
                 setTimeout(function() {
@@ -765,7 +813,7 @@
             }
         }
         
-        // If retries exhausted, try next fallback service
+        // If retries exhausted or ScreenshotOne failed, try next fallback service
         currentFallbackIndex++;
         if (currentFallbackIndex < screenshotFallbacks.length && screenshotFallbacks[currentFallbackIndex]) {
             retryCount = 0; // Reset retry count for new service

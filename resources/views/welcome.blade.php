@@ -213,7 +213,7 @@
                 <li class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 transform transition duration-500 hover:scale-105" data-aos="fade-left" data-aos-delay="400">
                     <div class="text-4xl mb-4">📄</div>
                     <strong class="text-xl block mb-2 text-indigo-700">Report Generation</strong>
-                    <span class="text-gray-600">Exports detailed PDF reports using <strong>DomPDF</strong> for documentation or sharing.</span>
+                    <span class="text-gray-600">Exports detailed PDF reports using DomPDF for documentation or sharing.</span>
                 </li>
             </ul>
         </section>
