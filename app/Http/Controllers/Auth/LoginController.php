@@ -37,4 +37,24 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
     }
+
+    /**
+     * Get the maximum number of attempts to allow.
+     *
+     * @return int
+     */
+    protected function maxAttempts()
+    {
+        return 5; // Maximum 5 login attempts
+    }
+
+    /**
+     * Get the number of minutes to throttle for.
+     *
+     * @return int
+     */
+    protected function decayMinutes()
+    {
+        return 15; // Lock out for 15 minutes after max attempts
+    }
 }

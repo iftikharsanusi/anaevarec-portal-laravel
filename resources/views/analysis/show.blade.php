@@ -204,8 +204,8 @@
         }
     }
 
-    $displayMissingHeaders = array_slice($missingHeadersList, 0, 6);
-    $missingOverflowCount = max(count($missingHeadersList) - count($displayMissingHeaders), 0);
+    $displayMissingHeaders = $missingHeadersList; // Show all missing headers
+    $missingOverflowCount = 0; // No overflow since we show all
 
     $encodedUrl = urlencode($analysis->url);
     $cleanUrl = $analysis->url;
@@ -422,9 +422,6 @@
                                     @foreach($displayMissingHeaders as $missingHeader)
                                         <span class="badge rounded-pill bg-danger px-3 py-2">{{ $missingHeader }}</span>
                                     @endforeach
-                                    @if($missingOverflowCount > 0)
-                                        <span class="badge rounded-pill bg-secondary px-3 py-2">+{{ $missingOverflowCount }} more</span>
-                                    @endif
                                 </div>
                             @else
                                 <span class="badge rounded-pill bg-success px-3 py-2">All headers present</span>

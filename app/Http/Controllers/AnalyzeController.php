@@ -126,6 +126,31 @@ class AnalyzeController extends Controller
     }
 
     /**
+     * Get friendly recommendation message for a security header
+     */
+    private function getFriendlyRecommendation(string $headerName, string $headerDisplayName): string
+    {
+        $friendlyMessages = [
+            'Content-Security-Policy' => "Implementing a Content Security Policy (CSP) helps protect your site from cross-site scripting (XSS) and malicious code injection by controlling which content is allowed to run.",
+            'Strict-Transport-Security' => "Enabling HTTP Strict Transport Security (HSTS) ensures that browsers always connect to your site using HTTPS, protecting users from man-in-the-middle attacks and preventing downgrade attacks.",
+            'X-Frame-Options' => "Adding the X-Frame-Options header prevents clickjacking attacks by controlling whether your site can be embedded in frames on other websites, keeping your users safe from deceptive interactions.",
+            'X-Content-Type-Options' => "Setting X-Content-Type-Options to 'nosniff' prevents browsers from guessing content types, which helps protect against MIME-type confusion attacks and keeps your content secure.",
+            'Permissions-Policy' => "Configuring Permissions Policy (formerly Feature Policy) gives you control over which browser features and APIs can be used on your site, helping to prevent unauthorized access to sensitive device capabilities.",
+            'Referrer-Policy' => "Setting a Referrer Policy helps you control how much referrer information is shared when users navigate away from your site, protecting user privacy and reducing information leakage.",
+            'X-XSS-Protection' => "Enabling X-XSS-Protection provides an additional layer of protection against cross-site scripting attacks by activating the browser's built-in XSS filter.",
+            'X-Permitted-Cross-Domain-Policies' => "Configuring X-Permitted-Cross-Domain-Policies helps control how cross-domain policy files are handled, providing better security for cross-origin resource sharing.",
+            'Cross-Origin-Resource-Policy' => "Implementing Cross-Origin-Resource-Policy helps control how the browser handles cross-origin resource requests, adding an extra layer of protection against certain types of attacks.",
+            'Cross-Origin-Embedder-Policy' => "Setting Cross-Origin-Embedder-Policy prevents your site from loading cross-origin resources that don't explicitly grant permission, helping to isolate your site's resources for better security.",
+            'Cross-Origin-Opener-Policy' => "Configuring Cross-Origin-Opener-Policy isolates your browsing context by preventing other origins from accessing window objects, which helps protect against certain cross-origin attacks.",
+            'Expect-CT' => "Enabling Expect-CT helps monitor Certificate Transparency compliance, allowing you to detect misissued certificates and improve the security of your HTTPS connections.",
+            'Report-To' => "Setting up Report-To allows you to receive violation reports from browsers, helping you monitor and respond to security issues on your site in real-time.",
+            'Clear-Site-Data' => "Configuring Clear-Site-Data gives you control over when to clear browsing data, which can be useful for logout functionality and privacy protection.",
+        ];
+
+        return $friendlyMessages[$headerName] ?? "Implementing {$headerDisplayName} helps improve your website's security posture and protect your users from various web-based threats.";
+    }
+
+    /**
      * Analyze security headers and return recommendations
      */
     private function analyzeSecurityHeaders(array $headers, string $url): array
@@ -277,7 +302,7 @@ class AnalyzeController extends Controller
                     'description' => $config['description'],
                     'recommendation' => "Add the {$headerName} header to improve security.",
                 ];
-                $recommendations[] = "Missing: {$config['name']}. {$config['description']}";
+                $recommendations[] = $this->getFriendlyRecommendation($headerName, $config['name']);
             } else {
                 $headerValue = $headers[$headerKey];
                 if ($config['check']($headerValue)) {
@@ -290,14 +315,14 @@ class AnalyzeController extends Controller
                         'recommendation' => "Improve the {$headerName} header configuration.",
                         'current_value' => $headerValue,
                     ];
-                    $recommendations[] = "Improve: {$config['name']} - Current value may not be optimal.";
+                    $recommendations[] = "Your {$config['name']} header is present but may not be optimally configured. Reviewing and improving its configuration can enhance your site's security posture.";
                 }
             }
         }
 
         // Additional recommendations
         if (isset($headers['Server'])) {
-            $recommendations[] = "Consider hiding or modifying the Server header to avoid revealing server information.";
+            $recommendations[] = "Consider hiding or modifying the Server header to avoid revealing server information that could help attackers identify vulnerabilities in your server software.";
         }
 
         // Check for HTTPS (now included in scoring)
@@ -306,7 +331,7 @@ class AnalyzeController extends Controller
         if (stripos($url, 'https://') !== false) {
             $score += $httpsPoints;
         } else {
-            $recommendations[] = "Consider using HTTPS instead of HTTP for secure communication.";
+            $recommendations[] = "Switching to HTTPS encrypts all communication between your website and visitors, protecting sensitive data like passwords and personal information from being intercepted by attackers.";
             $missing[] = [
                 'header' => 'HTTPS',
                 'name' => 'HTTPS Protocol',

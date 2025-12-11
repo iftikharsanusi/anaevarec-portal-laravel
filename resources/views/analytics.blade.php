@@ -459,6 +459,21 @@
         </div>
     </div>
 
+    <!-- Security Grade Distribution Row -->
+    <div class="row g-3 mb-3">
+        <div class="col-lg-12">
+            <div class="analytics-card">
+                <div class="section-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Security Grade Distribution
+                </div>
+                <div class="chart-container">
+                    <canvas id="gradeDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Row -->
     <div class="row g-3">
         <!-- Left: Header Implementation Progress -->
@@ -757,6 +772,92 @@
     @else
     // No missing headers data
     document.getElementById('missingHeadersChart').parentElement.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">No missing headers data available</div>';
+    @endif
+
+    // Security Grade Distribution Chart
+    @php
+        $gradeDistributionData = [
+            'A' => $gradeDistribution['A'] ?? 0,
+            'B' => $gradeDistribution['B'] ?? 0,
+            'C' => $gradeDistribution['C'] ?? 0,
+            'D' => $gradeDistribution['D'] ?? 0,
+            'E' => $gradeDistribution['E'] ?? 0,
+            'F' => $gradeDistribution['F'] ?? 0,
+        ];
+    @endphp
+    const gradeDistributionData = @json($gradeDistributionData);
+    const totalGrades = Object.values(gradeDistributionData).reduce((a, b) => a + b, 0);
+
+    @if($totalAnalyses > 0)
+    const gradeDistributionCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+    new Chart(gradeDistributionCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(gradeDistributionData),
+            datasets: [{
+                label: 'Number of Analyses',
+                data: Object.values(gradeDistributionData),
+                backgroundColor: [
+                    '#10b981', // A - Green
+                    '#3b82f6', // B - Blue
+                    '#f59e0b', // C - Yellow/Orange
+                    '#f77f00', // D - Orange
+                    '#ef4444', // E - Red
+                    '#dc2626', // F - Dark Red
+                ],
+                borderColor: [
+                    '#059669',
+                    '#2563eb',
+                    '#d97706',
+                    '#ea580c',
+                    '#dc2626',
+                    '#991b1b',
+                ],
+                borderWidth: 2,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const percentage = totalGrades > 0 ? ((value / totalGrades) * 100).toFixed(1) : 0;
+                            return 'Grade ' + context.label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    @else
+    // No grade distribution data
+    document.getElementById('gradeDistributionChart').parentElement.innerHTML = '<div style="text-align: center; padding: 3rem; color: #6b7280;">No analysis data available yet. Start analyzing websites to see grade distribution!</div>';
     @endif
 </script>
 @endsection

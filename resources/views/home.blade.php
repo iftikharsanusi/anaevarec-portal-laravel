@@ -430,16 +430,13 @@
                                     <div class="mt-4">
                                         <h6 class="text-uppercase text-muted fw-semibold mb-2">Missing Headers ({{ count($latestAnalysis->missing_security_features) }})</h6>
                                         <div class="d-flex flex-wrap gap-2">
-                                            @foreach(array_slice($latestAnalysis->missing_security_features, 0, 5) as $missing)
+                                            @foreach($latestAnalysis->missing_security_features as $missing)
                                                 @php
                                                     $headerName = $missing['name'] ?? $missing['header'] ?? '';
                                                     $shortForm = $missingHeadersMap[$headerName] ?? $missingHeadersMap[$missing['header'] ?? ''] ?? $headerName;
                                                 @endphp
                                                 <span class="badge rounded-pill bg-danger px-3 py-2">{{ $shortForm }}</span>
                                             @endforeach
-                                            @if(count($latestAnalysis->missing_security_features) > 5)
-                                                <span class="badge rounded-pill bg-secondary px-3 py-2">+{{ count($latestAnalysis->missing_security_features) - 5 }} more</span>
-                                            @endif
                                         </div>
                                     </div>
                                 @endif

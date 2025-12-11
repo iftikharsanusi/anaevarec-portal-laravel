@@ -458,6 +458,9 @@
                         <i class="fas fa-eye-slash" id="toggleIcon"></i>
                     </button>
                 </div>
+                <small style="color: #6b7280; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                    Must be at least 12 characters with uppercase, lowercase, number, and special character
+                </small>
                 @error('password')
                     <span class="error-text">{{ $message }}</span>
                 @enderror
