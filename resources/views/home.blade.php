@@ -19,6 +19,7 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
     
+    
     body {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 30%, #93c5fd 60%, #60a5fa 100%);
         min-height: 100vh;
@@ -60,7 +61,7 @@
     }
 
     .recent-analyses-table tbody tr + tr td {
-        border-top: 1px solid #f1f3f8;
+        border-top: 1px solid #d1d5db;
     }
 
     .recent-analyses-table th,
@@ -185,7 +186,7 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <h1 class="mb-4 hero-heading">Web Security Header Analyzer</h1>
-            <h5 class="text-muted mb-4">Scan any website you want by just enter the website URL below:</h5>
+            <h5 class="text-muted mb-4" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Scan any website you want by just enter the website URL below:</h5>
 
             <!-- Analysis Form -->
             <div class="mb-4">
@@ -194,7 +195,7 @@
                     <div class="shadow-sm rounded-4 overflow-hidden" style="background-color: transparent;">
                         <div class="input-group input-group-lg">
                             <input type="text" name="url" class="form-control border-0 bg-white" placeholder="Enter website URL (e.g., example.com)" required>
-                            <button type="submit" id="analyze-btn" class="btn btn-primary px-4">
+                            <button type="submit" id="analyze-btn" class="btn btn-primary px-4" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">
                                 <span id="analyze-text">Analyze</span>
                                 <span id="analyze-spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                             </button>
@@ -210,7 +211,7 @@
             @if(session('success'))
                 <div class="modern-success-alert" role="alert">
                     <div class="modern-success-alert-content">
-                        <span>{{ session('success') }}</span>
+                        <span style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">{{ session('success') }}</span>
                     </div>
                     <button type="button" class="modern-success-alert-close" onclick="this.parentElement.remove()" aria-label="Close">×</button>
                 </div>
@@ -305,13 +306,13 @@
                 @endphp
 
                 <div class="card shadow-sm border-0 mb-4 analysis-preview-card">
-                    <div class="card-header bg-white border-bottom-0 py-3">
+                    <div class="card-header border-bottom-0 py-3" style="background-color: #3b82f6;">
                         <div class="d-flex align-items-center">
-                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3">
+                            <div class="bg-white bg-opacity-20 text-white rounded-circle p-2 me-3">
                                 <span class="fw-bold">📊</span>
                             </div>
                             <div>
-                                <h5 class="mb-0"><b>ANALYSIS RESULT PREVIEW</b></h5>
+                                <h5 class="mb-0 text-white" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">ANALYSIS RESULT PREVIEW</h5>
                                 
                             </div>
                         </div>
@@ -319,7 +320,8 @@
                     <div class="card-body">
                         <div class="row g-4 align-items-stretch">
                             <div class="col-lg-4">
-                                <div class="border rounded-4 p-3 h-100 bg-light d-flex flex-column justify-content-center">
+                                <div class="border rounded-4 p-3 h-100 bg-light d-flex flex-column">
+                                    <h6 class="text-uppercase text-muted fw-semibold mb-3 text-center" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Website Preview</h6>
                                     @php
                                         $encodedUrl = urlencode($latestAnalysis->url);
                                         $cleanUrl = $latestAnalysis->url;
@@ -333,7 +335,7 @@
                                         $previewScreenshotUrl = collect($screenshotServices)->first(fn($url) => !empty($url));
                                     @endphp
                                     @if(!empty($previewScreenshotUrl))
-                                    <div class="position-relative" style="display: flex; align-items: center; justify-content: center; padding: 0; background-color: transparent;">
+                                    <div class="position-relative flex-grow-1 d-flex align-items-center justify-content-center" style="padding: 0; background-color: transparent;">
                                         <img 
                                             id="preview-screenshot-img"
                                             data-screenshot-url="{{ $previewScreenshotUrl }}"
@@ -364,13 +366,13 @@
                             <div class="col-lg-8">
                                 <div class="row g-3 align-items-center">
                                     <div class="col-md-7">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-1">Website URL</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-1" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Website URL</h6>
                                         <a href="{{ $latestAnalysis->url }}" target="_blank" class="text-decoration-none fw-semibold">
                                             {{ $latestAnalysis->url }}
                                         </a>
                                     </div>
                                     <div class="col-md-5">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-1">Security Score</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-1" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Security Score</h6>
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="flex-grow-1 bg-light rounded-pill overflow-hidden" style="height: 28px;">
                                                 <div class="h-100 d-flex align-items-center justify-content-center fw-semibold {{ $gradeClass }}" style="width: {{ max($latestAnalysis->security_score, 5) }}%; {{ $latestAnalysis->security_score >= 55 ? 'color: #fff;' : 'color: #000;' }}">
@@ -388,14 +390,14 @@
 
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-2">Security Headers Status</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Security Headers Status</h6>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge rounded-pill bg-success px-3 py-2">{{ $presentCount }} Present</span>
                                             <span class="badge rounded-pill bg-danger px-3 py-2">{{ $missingCount }} Missing</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-2">Key Headers</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Key Headers</h6>
                                         <div class="d-flex flex-wrap gap-2">
                                             @if(count($foundHeaders) > 0)
                                                 @foreach($foundHeaders as $header)
@@ -428,7 +430,7 @@
                                         ];
                                     @endphp
                                     <div class="mt-4">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-2">Missing Headers ({{ count($latestAnalysis->missing_security_features) }})</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Missing Headers ({{ count($latestAnalysis->missing_security_features) }})</h6>
                                         <div class="d-flex flex-wrap gap-2">
                                             @foreach($latestAnalysis->missing_security_features as $missing)
                                                 @php
@@ -444,10 +446,10 @@
                         </div>
 
                         <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <div class="text-lg fw-bold text-muted">
+                            <div class="text-lg fw-bold text-muted" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">
                                 Analyzed {{ $latestAnalysis->created_at->diffInSeconds() < 5 ? 'just now' : $latestAnalysis->created_at->diffForHumans() }}
                             </div>
-                            <a href="{{ route('analysis.show', $latestAnalysis->id) }}" class="btn btn-primary px-4">
+                            <a href="{{ route('analysis.show', $latestAnalysis->id) }}" class="btn btn-primary px-4" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">
                                 View Full Details
                             </a>
                         </div>

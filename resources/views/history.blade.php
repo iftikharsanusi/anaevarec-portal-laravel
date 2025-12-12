@@ -195,7 +195,7 @@
             @if(session('success'))
                 <div class="modern-success-alert" role="alert">
                     <div class="modern-success-alert-content">
-                        <span>{{ session('success') }}</span>
+                        <span style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">{{ session('success') }}</span>
                     </div>
                     <button type="button" class="modern-success-alert-close" onclick="this.parentElement.remove()" aria-label="Close">×</button>
                 </div>
