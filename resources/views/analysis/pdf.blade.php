@@ -237,24 +237,24 @@
 
     <div class="section" style="text-align: center;">
         <h2 class="summary-overview-title">Summary Overview</h2>
-        <div style="text-align: center; margin: 30px 0;">
+        <div style="text-align: center; margin: 20px 0;">
             <table style="width: 70%; margin: 0 auto;">
                 <tbody>
                     <tr>
-                        <th style="width: 32%; text-align: center;">Target URL:</th>
-                        <td style="text-align: center;">{{ $analysis->url }}</td>
+                        <th style="width: 32%; text-align: center; padding: 4px 8px;">Target URL:</th>
+                        <td style="text-align: center; padding: 4px 8px;">{{ $analysis->url }}</td>
                     </tr>
                     <tr>
-                        <th style="text-align: center;">Scan Date &amp; Time:</th>
-                        <td style="text-align: center;">{{ $reportGeneratedAt->format('F j, Y g:i A') }}</td>
+                        <th style="text-align: center; padding: 4px 8px;">Scan Date &amp; Time:</th>
+                        <td style="text-align: center; padding: 4px 8px;">{{ $reportGeneratedAt->format('F j, Y g:i A') }}</td>
                     </tr>
                     <tr>
-                        <th style="text-align: center;">Scanned By:</th>
-                        <td style="text-align: center;">{{ optional($analysis->user)->name ?? 'AnaEvaRec Analyzer' }}</td>
+                        <th style="text-align: center; padding: 4px 8px;">Scanned By:</th>
+                        <td style="text-align: center; padding: 4px 8px;">{{ optional($analysis->user)->name ?? 'AnaEvaRec Analyzer' }}</td>
                     </tr>
                     <tr>
-                        <th style="text-align: center;">Overall Security Score:</th>
-                        <td style="text-align: center;">{{ $analysis->security_score }}%</td>
+                        <th style="text-align: center; padding: 4px 8px;">Overall Security Score:</th>
+                        <td style="text-align: center; padding: 4px 8px;">{{ $analysis->security_score }}%</td>
                     </tr>
                 </tbody>
             </table>
