@@ -15,7 +15,7 @@
     <meta name="description" content="{{ $description }}">
     <meta name="keywords" content="security analysis, {{ $analysis->url }}, HTTP headers, security headers, {{ $analysis->security_score }}%, website security">
     @php
-        $ogTitle = 'Security Analysis: ' . $analysis->url . ' | AnaEvaRec';
+        $ogTitle = 'Security Analysis: ' . $analysis->url . ' | Web Security Header Analyzer';
         $ogDescription = 'Security Score: ' . $analysis->security_score . '% - ' . 
                         (is_array($analysis->missing_security_features) && count($analysis->missing_security_features) > 0 
                         ? count($analysis->missing_security_features) . ' missing headers' 

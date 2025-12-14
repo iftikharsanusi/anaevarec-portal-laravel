@@ -9,7 +9,7 @@
 @section('meta')
     <meta name="description" content="{{ $description }}">
     @php
-        $ogTitle = 'Analysis History - AnaEvaRec';
+        $ogTitle = 'Analysis History | Web Security Header Analyzer';
         $ogDescription = $description;
         $ogImage = url('/images/og-image.png');
     @endphp

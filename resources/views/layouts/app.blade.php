@@ -9,7 +9,7 @@
 
     @php
         $siteUrl = 'https://anaevarec.iftikhar.app';
-        $siteName = 'AnaEvaRec - Web Security Header Analyzer';
+        $siteName = 'Web Security Header Analyzer';
         $author = 'Iftikhar Sanusi';
     @endphp
 
@@ -25,7 +25,7 @@
         $ogTitle = $ogTitle ?? $defaultTitle;
         $ogDescription = $ogDescription ?? $defaultDescription;
         $ogImage = $ogImage ?? $defaultImage;
-        $ogImageAlt = $ogImageAlt ?? 'AnaEvaRec - Web Security Header Analyzer';
+        $ogImageAlt = $ogImageAlt ?? 'Web Security Header Analyzer';
         $twitterTitle = $twitterTitle ?? $defaultTitle;
         $twitterDescription = $twitterDescription ?? $defaultDescription;
         $twitterImage = $twitterImage ?? $defaultImage;
@@ -65,6 +65,7 @@
     <meta name="twitter:creator" content="@{{ $twitterCreator }}">
 
     <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon.ico') }}">
 
