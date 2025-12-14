@@ -273,7 +273,7 @@
                         'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
                         'Expect-CT' => 'Expect-CT',
                         'Report-To' => 'Report-To',
-                        'Clear-Site-Data' => 'Clear-Site',
+                        'Clear-Site-Data' => 'CSD',
                     ];
                     
                     $foundHeaders = [];
@@ -397,7 +397,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h6 class="text-uppercase text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Key Headers</h6>
+                                        <h6 class="text-uppercase text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif; font-weight: 700; letter-spacing: -0.01em;">Key Headers ({{ count($foundHeaders) }})</h6>
                                         <div class="d-flex flex-wrap gap-2">
                                             @if(count($foundHeaders) > 0)
                                                 @foreach($foundHeaders as $header)
@@ -416,6 +416,12 @@
                                         $missingHeadersMap = [
                                             'Content Security Policy (CSP)' => 'CSP',
                                             'Content-Security-Policy' => 'CSP',
+                                            'Strict-Transport-Security' => 'HSTS',
+                                            'HTTP Strict Transport Security' => 'HSTS',
+                                            'HSTS' => 'HSTS',
+                                            'X-Frame-Options' => 'X-Frame',
+                                            'X-Content-Type-Options' => 'X-CTO',
+                                            'Referrer-Policy' => 'Referrer',
                                             'Permissions Policy' => 'PP',
                                             'Permissions-Policy' => 'PP',
                                             'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
@@ -426,7 +432,6 @@
                                             'Expect-CT' => 'Expect-CT',
                                             'Report-To' => 'Report-To',
                                             'X-XSS-Protection' => 'X-XSS',
-                                            'HTTPS Protocol' => 'HTTPS',
                                         ];
                                     @endphp
                                     <div class="mt-4">

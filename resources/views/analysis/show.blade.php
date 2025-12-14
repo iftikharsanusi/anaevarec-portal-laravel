@@ -41,10 +41,25 @@
         'cross-origin-opener-policy' => 'COOP',
     ];
 
+    // Map for additional headers (full label to short form)
+    $additionalHeadersMap = [
+        'X-XSS-Protection' => 'X-XSS',
+        'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
+        'Expect-CT' => 'Expect-CT',
+        'Report-To' => 'Report-To',
+        'Clear-Site-Data' => 'CSD',
+    ];
+
     // Map for missing headers to short forms (for responsive display)
     $missingHeadersMap = [
         'Content Security Policy (CSP)' => 'CSP',
         'Content-Security-Policy' => 'CSP',
+        'Strict-Transport-Security' => 'HSTS',
+        'HTTP Strict Transport Security' => 'HSTS',
+        'HSTS' => 'HSTS',
+        'X-Frame-Options' => 'X-Frame',
+        'X-Content-Type-Options' => 'X-CTO',
+        'Referrer-Policy' => 'Referrer',
         'Permissions Policy' => 'PP',
         'Permissions-Policy' => 'PP',
         'X-Permitted-Cross-Domain-Policies' => 'X-PCDP',
@@ -55,7 +70,6 @@
         'Expect-CT' => 'Expect-CT',
         'Report-To' => 'Report-To',
         'X-XSS-Protection' => 'X-XSS',
-        'HTTPS Protocol' => 'HTTPS',
     ];
 
     // OWASP-style Security Header Weights (Total = 100)
@@ -148,7 +162,9 @@
             if (array_key_exists($headerKey, $keyHeadersMap)) {
                 $presentKeyHeaders[] = $keyHeadersMap[$headerKey];
             } else {
-                $additionalPresentHeaders[] = $meta['label'];
+                // Use short form if available, otherwise use the label
+                $shortForm = $additionalHeadersMap[$meta['label']] ?? $meta['label'];
+                $additionalPresentHeaders[] = $shortForm;
             }
         }
     }
@@ -358,7 +374,7 @@
                 <div class="col-lg-8">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="text-uppercase small text-muted fw-semibold mb-1">Website URL</div>
+                            <div class="text-uppercase small text-muted fw-semibold mb-1" style="font-family: 'Rubik', sans-serif;">Website URL</div>
                             <div style="word-break: break-all;">
                                 <a href="{{ $analysis->url }}" target="_blank" class="text-decoration-none fw-semibold fs-5 text-primary">
                                     {{ $analysis->url }}
@@ -366,7 +382,7 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-uppercase small text-muted fw-semibold mb-1">Report Time</div>
+                            <div class="text-uppercase small text-muted fw-semibold mb-1" style="font-family: 'Rubik', sans-serif;">Report Time</div>
                             <div class="fw-semibold fs-5">
                                 {{ $analysis->created_at->timezone('Asia/Kuala_Lumpur')->format('F j, Y g:i A') }}
                             </div>
@@ -383,7 +399,7 @@
             <div class="row g-4 align-items-stretch">
                 <div class="col-lg-4 col-md-6">
                     <div class="h-100 border rounded-4 p-4 bg-white d-flex flex-column align-items-center justify-content-center text-center">
-                        <div class="text-uppercase small text-muted fw-semibold mb-3">Security Grade</div>
+                        <div class="text-uppercase small text-muted fw-semibold mb-3" style="font-family: 'Rubik', sans-serif;">Security Grade</div>
                         <div class="ratio ratio-1x1" style="max-width: 160px; width: 55%;">
                             <div class="rounded-circle d-flex flex-column align-items-center justify-content-center"
                                  style="background-color: {{ $gradeRingBackground }}; border: 8px solid {{ $gradeRingBorder }};">
@@ -397,15 +413,18 @@
                 </div>
 
                 <div class="col-lg-4 col-md-6">
-                    <div class="h-100 border rounded-4 p-4 bg-white">
-                        <div class="text-uppercase small text-muted fw-semibold mb-2">Security Headers Status</div>
-                        <div class="d-flex gap-2 mb-3">
+                    <div class="h-100 border rounded-4 p-4 bg-white text-center">
+                        <div class="text-uppercase small text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif;">Security Headers Status</div>
+                        <div class="d-flex gap-2 mb-3 justify-content-center">
                             <span class="badge rounded-pill bg-success px-3 py-2">{{ count($presentHeadersDetails) }} Present</span>
                             <span class="badge rounded-pill {{ $missingCount > 0 ? 'bg-danger' : 'bg-success' }} px-3 py-2">{{ $missingCount }} Missing</span>
                         </div>
                         <div class="mb-3">
-                            <div class="text-uppercase small text-muted fw-semibold mb-2">Key Headers</div>
-                            <div class="d-flex flex-wrap gap-2">
+                            @php
+                                $keyHeadersCount = count(array_merge($presentKeyHeaders, $additionalPresentHeaders));
+                            @endphp
+                            <div class="text-uppercase small text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif;">Key Headers ({{ $keyHeadersCount }})</div>
+                            <div class="d-flex flex-wrap gap-2 justify-content-center">
                                 @if(count($presentKeyHeaders) > 0 || count($additionalPresentHeaders) > 0)
                                     @foreach(array_merge($presentKeyHeaders, $additionalPresentHeaders) as $headerLabel)
                                         <span class="badge rounded-pill bg-success px-3 py-2">{{ $headerLabel }}</span>
@@ -416,9 +435,9 @@
                             </div>
                         </div>
                         <div>
-                            <div class="text-uppercase small text-muted fw-semibold mb-2">Missing Headers ({{ $missingCount }})</div>
+                            <div class="text-uppercase small text-muted fw-semibold mb-2" style="font-family: 'Rubik', sans-serif;">Missing Headers ({{ $missingCount }})</div>
                             @if($missingCount > 0)
-                                <div class="d-flex flex-wrap gap-2">
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
                                     @foreach($displayMissingHeaders as $missingHeader)
                                         <span class="badge rounded-pill bg-danger px-3 py-2">{{ $missingHeader }}</span>
                                     @endforeach
@@ -432,7 +451,7 @@
 
                 <div class="col-lg-4">
                     <div class="h-100 border rounded-4 bg-white p-3 d-flex flex-column align-items-center">
-                        <div class="text-uppercase small text-muted fw-semibold mb-2 text-center">Website Preview</div>
+                        <div class="text-uppercase small text-muted fw-semibold mb-2 text-center" style="font-family: 'Rubik', sans-serif;">Website Preview</div>
                         <div class="screenshot-container position-relative flex-grow-1 d-flex align-items-center justify-content-center w-100">
                             @if(!empty($screenshotUrl))
                             <img
@@ -481,7 +500,7 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
             <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                <h5 class="fw-bold mb-0">Present Security Headers</h5>
+                <h5 class="fw-bold mb-0" style="font-family: 'Rubik', sans-serif;">Present Security Headers</h5>
                 <span class="badge bg-success">
                     {{ count($presentHeadersDetails) }} {{ \Illuminate\Support\Str::plural('item', count($presentHeadersDetails)) }}
                 </span>
@@ -496,7 +515,7 @@
                                 <div style="padding-right: 80px;">
                                     <div class="fw-bold text-success mb-1" style="word-break: break-word;">{{ $header['label'] }}</div>
                                     @if(!empty($header['description']))
-                                        <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                        <div class="small text-black mb-2" style="word-break: break-word; overflow-wrap: break-word;">
                                             {{ $header['description'] }}
                                         </div>
                                     @endif
@@ -516,7 +535,7 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
             <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                <h5 class="fw-bold mb-0">Missing Security Headers</h5>
+                <h5 class="fw-bold mb-0" style="font-family: 'Rubik', sans-serif;">Missing Security Headers</h5>
                 <span class="badge {{ $missingCount > 0 ? 'bg-danger' : 'bg-success' }}">
                     {{ $missingCount }} {{ \Illuminate\Support\Str::plural('item', $missingCount) }}
                 </span>
@@ -534,7 +553,7 @@
                                 <span class="badge bg-danger position-absolute top-0 end-0" style="margin: 12px;">Missing</span>
                                 <div style="padding-right: 80px;">
                                     <div class="fw-bold text-danger mb-1" style="word-break: break-word;">{{ $missingName }}</div>
-                                    <div class="small text-muted mb-2" style="word-break: break-word; overflow-wrap: break-word;">
+                                    <div class="small text-black mb-2" style="word-break: break-word; overflow-wrap: break-word;">
                                         {{ $missingDescription }}
                                     </div>
                                 </div>
@@ -554,7 +573,7 @@
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-4">
                 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-                    <h5 class="fw-bold mb-0">Security Recommendations</h5>
+                    <h5 class="fw-bold mb-0" style="font-family: 'Rubik', sans-serif;">Security Recommendations</h5>
                     <span class="badge bg-primary">
                         {{ count($analysis->recommendations) }} {{ \Illuminate\Support\Str::plural('recommendation', count($analysis->recommendations)) }}
                     </span>
@@ -571,7 +590,7 @@
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 d-flex align-items-center" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        <p class="mb-0 text-dark" style="line-height: 1.6; word-break: break-word; overflow-wrap: break-word;">{{ $recommendation }}</p>
+                                        <p class="mb-0 text-dark fw-bold text-justify" style="line-height: 1.6; word-break: break-word; overflow-wrap: break-word;">{{ $recommendation }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -592,7 +611,7 @@
                 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 position-relative">
                     <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-0" style="font-size: 1.5rem; letter-spacing: -0.01em;">Overall Website Security</h5>
+                        <h5 class="fw-bold mb-0" style="font-size: 1.5rem; letter-spacing: -0.01em; font-family: 'Rubik', sans-serif;">Overall Website Security</h5>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <div class="text-center">
@@ -664,7 +683,7 @@
     </div>
 
     <div class="recent-analyses-card bg-white shadow-sm p-4 mb-4">
-        <h5 class="fw-bold mb-4">Standard HTTP Headers</h5>
+        <h5 class="fw-bold mb-4" style="font-family: 'Rubik', sans-serif;">Additional Informations - Standard HTTP Headers</h5>
         @if(is_array($analysis->headers) && count($analysis->headers) > 0)
             @php
                 $securityHeaderKeys = array_keys($expectedSecurityHeaders);

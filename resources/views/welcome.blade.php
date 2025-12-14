@@ -37,6 +37,9 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon.ico') }}">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"></noscript>
 
@@ -147,15 +150,21 @@
 
         <section id="overview" class="py-20 px-6 max-w-5xl mx-auto">
             <div data-aos="fade-right" data-aos-duration="800">
-                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b-4 border-indigo-500 inline-block pb-1">Overview</h2>
-                <p class="text-lg leading-relaxed mb-4 text-justify text-gray-700">
-                    The <strong>Web Security Header Analyzer (WSHA)</strong> is a web-based platform designed to assess the security posture of websites by analyzing their HTTP response headers.
-                    These headers play a vital role in protecting web applications from threats such as <em>cross-site scripting (XSS)</em>, <em>clickjacking</em>, and <em>data exposure</em>.
-                </p>
-                <p class="text-lg leading-relaxed text-justify text-gray-700">
-                    WSHA simplifies this process by automatically scanning target URLs, grading security configurations, and providing clear recommendations.
-                    Its modern design and interactive results make it suitable for developers, students, and cybersecurity practitioners.
-                </p>
+                <h2 class="text-3xl font-bold mb-10 text-gray-900 border-b-4 border-indigo-500 inline-block pb-2">Overview</h2>
+                
+                <div class="bg-white rounded-lg shadow-md p-8 mb-6 hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="100">
+                    <p class="text-lg leading-relaxed text-justify text-gray-700 font-sans font-bold">
+                        The Web Security Header Analyzer (WSHA) is a web-based platform designed to assess the security posture of websites by analyzing their HTTP response headers.
+                        These headers play a vital role in protecting web applications from threats such as cross-site scripting (XSS), clickjacking, and data exposure.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-8 mb-6 hover:shadow-lg transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200">
+                    <p class="text-lg leading-relaxed text-justify text-gray-700 font-sans font-bold">
+                        WSHA simplifies this process by automatically scanning target URLs, grading security configurations, and providing clear recommendations.
+                        Its modern design and interactive results make it suitable for developers, students, and cybersecurity practitioners.
+                    </p>
+                </div>
             </div>
         </section>
 
@@ -164,26 +173,26 @@
         <section id="challenges" class="bg-gray-100 py-20 px-6">
             <div class="max-w-5xl mx-auto text-center">
                 <h2 class="text-3xl font-bold mb-6 text-gray-900" data-aos="fade-up">Challenges in Web Security</h2>
-                <p class="text-lg mb-10 text-gray-600" data-aos="fade-up" data-aos-delay="100">
+                <p class="text-lg mb-10 text-black" data-aos="fade-up" data-aos-delay="100" style="font-family: 'Rubik', sans-serif;">
                     Despite the availability of tools, many websites still lack proper security headers due to:
                 </p>
 
                 <ul class="grid md:grid-cols-3 gap-6 text-lg">
                     <li class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="200">
                         <span class="font-semibold text-red-600 text-xl block mb-2">❌ Complexity</span>
-                        <p class="text-gray-600">Existing tools can be overly technical and difficult for beginners to use.</p>
+                        <p class="text-black" style="font-family: 'Rubik', sans-serif;">Existing tools can be overly technical and difficult for beginners to use.</p>
                     </li>
                     <li class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="400">
                         <span class="font-semibold text-red-600 text-xl block mb-2">❌ Limited Features</span>
-                        <p class="text-gray-600">Many tools lack scan history, user accounts, or report generation capabilities.</p>
+                        <p class="text-black" style="font-family: 'Rubik', sans-serif;">Many tools lack scan history, user accounts, or report generation capabilities.</p>
                     </li>
                     <li class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300" data-aos="fade-up" data-aos-delay="600">
                         <span class="font-semibold text-red-600 text-xl block mb-2">❌ Lack of Awareness</span>
-                        <p class="text-gray-600">Developers may not fully understand the role of headers in web security.</p>
+                        <p class="text-black" style="font-family: 'Rubik', sans-serif;">Developers may not fully understand the role of headers in web security.</p>
                     </li>
                 </ul>
                 <div class="mt-12" data-aos="zoom-in" data-aos-delay="800">
-                    <p class="text-lg text-center bg-white p-6 rounded-lg shadow-inner inline-block max-w-3xl">
+                    <p class="text-lg text-center bg-white p-6 rounded-lg shadow-inner inline-block max-w-3xl text-black" style="font-family: 'Rubik', sans-serif;">
                         WSHA solves these problems by offering a <strong>simple, insightful, and secure</strong> way to assess and improve web header configurations.
                     </p>
                 </div>
@@ -198,22 +207,22 @@
                 <li class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 transform transition duration-500 hover:scale-105" data-aos="fade-right" data-aos-delay="100">
                     <div class="text-4xl mb-4">🔍</div>
                     <strong class="text-xl block mb-2 text-indigo-700">Automatic Header Detection</strong>
-                    <span class="text-gray-600">Scans target websites and detects missing or misconfigured security headers.</span>
+                    <span class="text-black">Scans target websites and detects missing or misconfigured security headers.</span>
                 </li>
                 <li class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 transform transition duration-500 hover:scale-105" data-aos="fade-left" data-aos-delay="200">
                     <div class="text-4xl mb-4">📊</div>
                     <strong class="text-xl block mb-2 text-indigo-700">Real-Time Scoring</strong>
-                    <span class="text-gray-600">Generates instant grades and recommendations for improvement.</span>
+                    <span class="text-black">Generates instant grades and recommendations for improvement.</span>
                 </li>
                 <li class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 transform transition duration-500 hover:scale-105" data-aos="fade-right" data-aos-delay="300">
                     <div class="text-4xl mb-4">🕒</div>
                     <strong class="text-xl block mb-2 text-indigo-700">Scan History</strong>
-                    <span class="text-gray-600">Stores past analyses, enabling users to monitor changes over time.</span>
+                    <span class="text-black">Stores past analyses, enabling users to monitor changes over time.</span>
                 </li>
                 <li class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 transform transition duration-500 hover:scale-105" data-aos="fade-left" data-aos-delay="400">
                     <div class="text-4xl mb-4">📄</div>
                     <strong class="text-xl block mb-2 text-indigo-700">Report Generation</strong>
-                    <span class="text-gray-600">Exports detailed PDF reports using DomPDF for documentation or sharing.</span>
+                    <span class="text-black">Exports detailed PDF reports using DomPDF for documentation or sharing.</span>
                 </li>
             </ul>
         </section>
@@ -224,7 +233,7 @@
             <div class="max-w-5xl mx-auto">
                 <h2 class="text-3xl font-bold mb-8 text-gray-900 text-center" data-aos="fade-up">How It Works</h2>
                 <div class="bg-white rounded-2xl shadow-xl p-8 md:p-12" data-aos="zoom-in">
-                    <ol class="space-y-6 text-lg text-gray-700">
+                    <ol class="space-y-6 text-lg text-black">
                         <li class="flex items-start">
                             <span class="flex-shrink-0 bg-indigo-100 text-indigo-600 font-bold rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1">1</span>
                             <span>Register or log in to access the analyzer dashboard.</span>
@@ -257,16 +266,16 @@
             <p class="text-lg text-center text-gray-600 max-w-2xl mx-auto mb-10" data-aos="fade-up">
                 WSHA is powered by modern and secure technologies that ensure reliable performance and scalability.
             </p>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <div class="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="100">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Laravel.svg/1200px-Laravel.svg.png" alt="Laravel Logo" class="h-16 mx-auto mb-3 object-contain">
                     <p class="font-semibold text-lg">Laravel</p>
                     <p class="text-sm text-gray-500">Backend Framework</p>
                 </div>
                 <div class="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="200">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Tailwind_CSS_Logo.svg/1200px-Tailwind_CSS_Logo.svg.png" alt="Tailwind CSS Logo" class="h-16 mx-auto mb-3 object-contain">
-                    <p class="font-semibold text-lg">Tailwind CSS</p>
-                    <p class="text-sm text-gray-500">Frontend Styling</p>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Bootstrap_logo.svg/1200px-Bootstrap_logo.svg.png" alt="Bootstrap Logo" class="h-16 mx-auto mb-3 object-contain">
+                    <p class="font-semibold text-lg">Bootstrap</p>
+                    <p class="text-sm text-gray-500">UI Framework</p>
                 </div>
                 <div class="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="300">
                     <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/dd/MySQL_logo.svg/1200px-MySQL_logo.svg.png" alt="MySQL Logo" class="h-16 mx-auto mb-3 object-contain">
@@ -278,6 +287,11 @@
                     <p class="font-semibold text-lg">Guzzle HTTP</p>
                     <p class="text-sm text-gray-500">HTTP Client</p>
                 </div>
+                <div class="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2" data-aos="fade-up" data-aos-delay="500">
+                    <img src="{{ asset('images/dompdf.svg') }}" alt="DomPDF Logo" class="h-16 mx-auto mb-3 object-contain">
+                    <p class="font-semibold text-lg">DomPDF</p>
+                    <p class="text-sm text-gray-500">PDF Generator</p>
+                </div>
             </div>
         </section>
 
@@ -287,19 +301,19 @@
             <h2 class="text-3xl font-bold mb-8 text-gray-900 text-center" data-aos="fade-down">Why Choose WSHA?</h2>
             <div class="grid md:grid-cols-2 gap-8 text-lg">
                 <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 hover:bg-gray-50 transition-colors" data-aos="flip-up" data-aos-delay="100">
-                    <p class="font-semibold mb-2 text-indigo-700">User-Friendly Interface</p>
+                    <p class="font-bold mb-2 text-indigo-700" style="font-family: 'Rubik', sans-serif;">User-Friendly Interface</p>
                     Simple, clean, and intuitive design for a smooth user experience.
                 </div>
                 <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 hover:bg-gray-50 transition-colors" data-aos="flip-up" data-aos-delay="200">
-                    <p class="font-semibold mb-2 text-indigo-700">Educational Insights</p>
-                    Learn about each security header’s purpose and configuration.
+                    <p class="font-bold mb-2 text-indigo-700" style="font-family: 'Rubik', sans-serif;">Educational Insights</p>
+                    Learn about each security header's purpose and configuration.
                 </div>
                 <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 hover:bg-gray-50 transition-colors" data-aos="flip-up" data-aos-delay="300">
-                    <p class="font-semibold mb-2 text-indigo-700">Professional Reporting</p>
+                    <p class="font-bold mb-2 text-indigo-700" style="font-family: 'Rubik', sans-serif;">Professional Reporting</p>
                     Download well-formatted, printable reports for documentation or compliance.
                 </div>
                 <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 hover:bg-gray-50 transition-colors" data-aos="flip-up" data-aos-delay="400">
-                    <p class="font-semibold mb-2 text-indigo-700">Security Awareness</p>
+                    <p class="font-bold mb-2 text-indigo-700" style="font-family: 'Rubik', sans-serif;">Security Awareness</p>
                     Encourages better cybersecurity practices aligned with OWASP standards.
                 </div>
             </div>

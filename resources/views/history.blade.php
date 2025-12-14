@@ -207,11 +207,11 @@
                         <table class="recent-analyses-table">
                             <thead>
                                 <tr>
-                                    <th><b>URL</b></th>
-                                    <th>Security Score</th>
-                                    <th><b>Missing Features</b></th>
-                                    <th><b>Analyzed</b></th>
-                                    <th><b>Action</b></th>
+                                    <th style="font-family: 'Rubik', sans-serif;">URL</th>
+                                    <th style="font-family: 'Rubik', sans-serif;">Security Score</th>
+                                    <th style="font-family: 'Rubik', sans-serif;">Missing Features</th>
+                                    <th style="font-family: 'Rubik', sans-serif;">Analyzed</th>
+                                    <th style="font-family: 'Rubik', sans-serif;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>

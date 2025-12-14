@@ -273,6 +273,43 @@
         text-align: center;
     }
 
+    /* Tooltip Styles */
+    .calculation-tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.9);
+        color: #ffffff;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        max-width: 280px;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .calculation-tooltip.show {
+        opacity: 1;
+    }
+
+    .calculation-tooltip::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .kpi-card,
+    .analytics-card {
+        position: relative;
+        cursor: help;
+    }
+
     @media (max-width: 768px) {
         .analytics-container {
             padding: 1rem 0.5rem;
@@ -310,6 +347,11 @@
         .chart-container {
             height: 250px;
         }
+
+        .calculation-tooltip {
+            max-width: 240px;
+            font-size: 0.8rem;
+        }
     }
 </style>
 
@@ -324,7 +366,7 @@
         <!-- Top KPI Cards - Minimalist Design -->
     <div class="row g-3 mb-3 justify-content-center">
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-            <div class="kpi-card">
+            <div class="kpi-card" data-tooltip="Total number of website security analyses you have performed. This counts all analyses in your account history.">
                 <div class="kpi-icon-wrapper">
                     <div class="kpi-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -345,7 +387,7 @@
             </div>
         </div>
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-            <div class="kpi-card">
+            <div class="kpi-card" data-tooltip="Average security score across all your analyses. Calculated by summing all security scores and dividing by the total number of analyses.">
                 <div class="kpi-icon-wrapper">
                     <div class="kpi-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -366,7 +408,7 @@
             </div>
         </div>
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-            <div class="kpi-card">
+            <div class="kpi-card" data-tooltip="Count of analyses with security scores of 70% or higher (Grade A or B). These represent websites with good to excellent security header configurations.">
                 <div class="kpi-icon-wrapper">
                     <div class="kpi-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -387,7 +429,7 @@
             </div>
         </div>
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-            <div class="kpi-card">
+            <div class="kpi-card" data-tooltip="Average number of missing security headers per analysis. Calculated by counting missing headers in each analysis, then averaging across all analyses. Lower is better.">
                 <div class="kpi-icon-wrapper">
                     <div class="kpi-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -462,7 +504,7 @@
     <!-- Security Grade Distribution Row -->
     <div class="row g-3 mb-3">
         <div class="col-lg-12">
-            <div class="analytics-card">
+            <div class="analytics-card" data-tooltip="Distribution of security grades across all analyses. Grades are assigned based on score ranges: A (85-100%), B (70-84%), C (55-69%), D (40-54%), E (25-39%), F (0-24%).">
                 <div class="section-title">
                     <i class="fas fa-chart-pie"></i>
                     Security Grade Distribution
@@ -636,6 +678,39 @@
                         @endif
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Score Achievements -->
+            <div class="analytics-card" style="margin-top: 1.5rem;">
+                <div class="section-title">
+                    <i class="fas fa-trophy"></i>
+                    Score Achievements
+                </div>
+                @if($totalAnalyses > 0)
+                    <div style="display: flex; justify-content: space-around; align-items: center; padding: 1.5rem 0;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="font-size: 0.7rem; color: #6b7280; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Best Score</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #10b981; margin-bottom: 0.4rem;">{{ $bestScore }}%</div>
+                            @php
+                                $bestGrade = $bestScore >= 85 ? 'A' : ($bestScore >= 70 ? 'B' : ($bestScore >= 55 ? 'C' : ($bestScore >= 40 ? 'D' : ($bestScore >= 25 ? 'E' : 'F'))));
+                            @endphp
+                            <div style="font-size: 1.25rem; font-weight: 600; color: #10b981;">Grade {{ $bestGrade }}</div>
+                        </div>
+                        <div style="width: 1px; height: 60px; background-color: #e5e7eb;"></div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="font-size: 0.7rem; color: #6b7280; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">Worst Score</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #ef4444; margin-bottom: 0.4rem;">{{ $worstScore }}%</div>
+                            @php
+                                $worstGrade = $worstScore >= 85 ? 'A' : ($worstScore >= 70 ? 'B' : ($worstScore >= 55 ? 'C' : ($worstScore >= 40 ? 'D' : ($worstScore >= 25 ? 'E' : 'F'))));
+                            @endphp
+                            <div style="font-size: 1.25rem; font-weight: 600; color: #ef4444;">Grade {{ $worstGrade }}</div>
+                        </div>
+                    </div>
+                @else
+                    <div style="text-align: center; padding: 1.5rem; color: #6b7280;">
+                        No score data available
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -859,6 +934,85 @@
     // No grade distribution data
     document.getElementById('gradeDistributionChart').parentElement.innerHTML = '<div style="text-align: center; padding: 3rem; color: #6b7280;">No analysis data available yet. Start analyzing websites to see grade distribution!</div>';
     @endif
+
+    // Tooltip functionality for calculation explanations
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipElements = document.querySelectorAll('[data-tooltip]');
+        let tooltip = null;
+
+        function createTooltip() {
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'calculation-tooltip';
+                document.body.appendChild(tooltip);
+            }
+            return tooltip;
+        }
+
+        function showTooltip(element, text) {
+            const tooltipEl = createTooltip();
+            tooltipEl.textContent = text;
+            tooltipEl.classList.add('show');
+
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltipEl.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            // Position tooltip above the element, centered
+            let top = rect.top + scrollTop - tooltipRect.height - 10;
+            let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
+
+            // Adjust if tooltip goes off screen
+            if (left < 10) {
+                left = 10;
+            } else if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+
+            if (top < scrollTop + 10) {
+                // If not enough space above, show below
+                top = rect.bottom + scrollTop + 10;
+                tooltipEl.style.bottom = 'auto';
+                tooltipEl.style.top = top + 'px';
+                tooltipEl.style.transform = 'translateX(-50%)';
+                tooltipEl.style.left = rect.left + scrollLeft + (rect.width / 2) + 'px';
+                tooltipEl.style.right = 'auto';
+            } else {
+                tooltipEl.style.top = top + 'px';
+                tooltipEl.style.left = left + 'px';
+                tooltipEl.style.transform = 'none';
+            }
+        }
+
+        function hideTooltip() {
+            if (tooltip) {
+                tooltip.classList.remove('show');
+            }
+        }
+
+        tooltipElements.forEach(element => {
+            element.addEventListener('mouseenter', function(e) {
+                const text = this.getAttribute('data-tooltip');
+                if (text) {
+                    showTooltip(this, text);
+                }
+            });
+
+            element.addEventListener('mouseleave', function() {
+                hideTooltip();
+            });
+
+            element.addEventListener('mousemove', function(e) {
+                if (tooltip && tooltip.classList.contains('show')) {
+                    const text = this.getAttribute('data-tooltip');
+                    if (text) {
+                        showTooltip(this, text);
+                    }
+                }
+            });
+        });
+    });
 </script>
 @endsection
 

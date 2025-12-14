@@ -115,6 +115,7 @@
     }
 
     .login-title h1 {
+        font-family: 'Rubik', sans-serif;
         font-size: 1.5rem;
         font-weight: 700;
         color: #1f2937;
@@ -124,6 +125,7 @@
     }
 
     .login-subtitle {
+        font-family: 'Rubik', sans-serif;
         color: #6b7280;
         font-size: 0.875rem;
         margin-bottom: 1.75rem;

@@ -27,6 +27,10 @@
             letter-spacing: 0.05em;
             font-weight: bold;
             color: #000000;
+            text-align: left;
+        }
+        .summary-overview-title {
+            text-align: center;
         }
         .subtitle {
             text-align: center;
@@ -54,6 +58,7 @@
         }
         td {
             color: #000000;
+            font-family: DejaVu Sans, sans-serif;
         }
         .section {
             margin-bottom: 28px;
@@ -76,6 +81,12 @@
             font-family: DejaVu Sans Mono, monospace;
             font-size: 10.5px;
             color: #000000;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+        }
+        .page-break-before {
+            page-break-before: always;
         }
     </style>
 </head>
@@ -98,12 +109,6 @@
 
     // Match the same headers as in analysis view
     $securityHeaders = [
-        [
-            'key' => 'https',
-            'label' => 'HTTPS Protocol',
-            'default_missing' => 'Switching to HTTPS encrypts all communication between your website and visitors, protecting sensitive data like passwords and personal information from being intercepted by attackers.',
-            'default_present' => 'Secure protocol detected.',
-        ],
         [
             'key' => 'content-security-policy',
             'label' => 'Content-Security-Policy',
@@ -215,11 +220,7 @@
     // Get present headers count
     $presentCount = 0;
     foreach ($securityHeaders as $header) {
-        if ($header['key'] === 'https') {
-            $isPresent = str_starts_with(strtolower($analysis->url), 'https://');
-        } else {
-            $isPresent = array_key_exists($header['key'], $normalizedHeaders) && trim($normalizedHeaders[$header['key']]) !== '';
-        }
+        $isPresent = array_key_exists($header['key'], $normalizedHeaders) && trim($normalizedHeaders[$header['key']]) !== '';
         if ($isPresent) {
             $presentCount++;
         }
@@ -234,35 +235,65 @@
         <strong>Analyzer:</strong> Web Security Header Analyzer (Laravel-Based)
     </div>
 
-    <div class="section">
-        <h2>Summary Overview</h2>
-        <table>
-            <tbody>
-                <tr>
-                    <th style="width: 32%;">Target URL:</th>
-                    <td>{{ $analysis->url }}</td>
-                </tr>
-                <tr>
-                    <th>Scan Date &amp; Time:</th>
-                    <td>{{ $reportGeneratedAt->format('F j, Y g:i A') }}</td>
-                </tr>
-                <tr>
-                    <th>Scanned By:</th>
-                    <td>{{ optional($analysis->user)->name ?? 'AnaEvaRec Analyzer' }}</td>
-                </tr>
-                <tr>
-                    <th>Overall Security Score:</th>
-                    <td>{{ $analysis->security_score }}%</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="section" style="text-align: center;">
+        <h2 class="summary-overview-title">Summary Overview</h2>
+        <div style="text-align: center; margin: 30px 0;">
+            <table style="width: 70%; margin: 0 auto;">
+                <tbody>
+                    <tr>
+                        <th style="width: 32%; text-align: center;">Target URL:</th>
+                        <td style="text-align: center;">{{ $analysis->url }}</td>
+                    </tr>
+                    <tr>
+                        <th style="text-align: center;">Scan Date &amp; Time:</th>
+                        <td style="text-align: center;">{{ $reportGeneratedAt->format('F j, Y g:i A') }}</td>
+                    </tr>
+                    <tr>
+                        <th style="text-align: center;">Scanned By:</th>
+                        <td style="text-align: center;">{{ optional($analysis->user)->name ?? 'AnaEvaRec Analyzer' }}</td>
+                    </tr>
+                    <tr>
+                        <th style="text-align: center;">Overall Security Score:</th>
+                        <td style="text-align: center;">{{ $analysis->security_score }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="section">
+    <div class="section page-break-before">
         <h2>Detailed Header Evaluation</h2>
         <p class="small-muted">
             This section details the presence and configuration status of critical HTTP Security Headers.
         </p>
+        
+        @php
+            $presentHeaders = [];
+            $missingHeaders = [];
+            
+            foreach ($securityHeaders as $header) {
+                $headerKey = $header['key'];
+                $isPresent = array_key_exists($headerKey, $normalizedHeaders) && trim($normalizedHeaders[$headerKey]) !== '';
+
+                $missingItem = $headerKey ? ($missingItems[$headerKey] ?? null) : null;
+                $verdict = $missingItem['recommendation'] ?? ($isPresent ? $header['default_present'] : $header['default_missing']);
+                
+                if ($isPresent) {
+                    $presentHeaders[] = [
+                        'label' => $header['label'],
+                        'verdict' => $verdict
+                    ];
+                } else {
+                    $missingHeaders[] = [
+                        'label' => $header['label'],
+                        'verdict' => $verdict
+                    ];
+                }
+            }
+        @endphp
+        
+        <h3 style="font-size: 13px; margin-top: 20px; margin-bottom: 10px;">Present Security Headers ({{ count($presentHeaders) }})</h3>
+        @if(count($presentHeaders) > 0)
         <table>
             <thead>
                 <tr>
@@ -272,35 +303,46 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($securityHeaders as $header)
-                    @php
-                        if ($header['key'] === 'https') {
-                            $isPresent = str_starts_with(strtolower($analysis->url), 'https://');
-                            $headerKey = null;
-                        } else {
-                            $headerKey = $header['key'];
-                            $isPresent = array_key_exists($headerKey, $normalizedHeaders) && trim($normalizedHeaders[$headerKey]) !== '';
-                        }
-
-                        $missingItem = $headerKey ? ($missingItems[$headerKey] ?? null) : null;
-                        $status = $isPresent ? 'Present' : 'Missing';
-                        // Use friendly recommendation from analysis if available, otherwise use default
-                        $verdict = $missingItem['recommendation'] ?? ($isPresent ? $header['default_present'] : $header['default_missing']);
-                    @endphp
-                    <tr>
-                        <td>{{ $header['label'] }}</td>
-                        <td>{{ $status }}</td>
-                        <td>{{ $verdict }}</td>
-                    </tr>
+                @foreach($presentHeaders as $header)
+                <tr>
+                    <td>{{ $header['label'] }}</td>
+                    <td>Present</td>
+                    <td>{{ $header['verdict'] }}</td>
+                </tr>
                 @endforeach
             </tbody>
         </table>
+        @else
+        <p style="padding: 12px; background-color: #f9f9f9; border: 1px solid #000000;">No security headers detected as present.</p>
+        @endif
+        
+        <h3 style="font-size: 13px; margin-top: 20px; margin-bottom: 10px;">Missing Security Headers ({{ count($missingHeaders) }})</h3>
+        @if(count($missingHeaders) > 0)
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Header Name</th>
+                    <th style="width: 15%;">Status</th>
+                    <th>Recommendation / Verdict</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($missingHeaders as $header)
+                <tr>
+                    <td>{{ $header['label'] }}</td>
+                    <td>Missing</td>
+                    <td>{{ $header['verdict'] }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @else
+        <p style="padding: 12px; background-color: #f9f9f9; border: 1px solid #000000;">All security headers are present.</p>
+        @endif
     </div>
 
-    <hr class="divider">
-
     @if(is_array($analysis->recommendations) && count($analysis->recommendations) > 0)
-    <div class="section">
+    <div class="section page-break-before">
         <h2>Security Recommendations</h2>
         <p class="small-muted">
             Actionable recommendations to improve your website's security posture.
@@ -322,33 +364,31 @@
             </tbody>
         </table>
     </div>
-
-    <hr class="divider">
     @endif
 
-    <div class="section">
+    <div class="section page-break-before">
         <h2>Overall Website Security</h2>
         <table>
             <tbody>
                 <tr>
-                    <th style="width: 32%;">Security Grade:</th>
-                    <td style="font-size: 18px; font-weight: bold;">{{ $grade }}</td>
+                    <th style="width: 32%; font-family: DejaVu Sans, sans-serif;">Security Grade:</th>
+                    <td style="font-size: 18px; font-weight: bold; font-family: DejaVu Sans, sans-serif;">{{ $grade }}</td>
                 </tr>
                 <tr>
-                    <th>Security Score:</th>
-                    <td style="font-size: 16px; font-weight: bold;">{{ $analysis->security_score }}%</td>
+                    <th style="font-family: DejaVu Sans, sans-serif;">Security Score:</th>
+                    <td style="font-size: 16px; font-weight: bold; font-family: DejaVu Sans, sans-serif;">{{ $analysis->security_score }}%</td>
                 </tr>
                 <tr>
-                    <th>Headers Present:</th>
-                    <td>{{ $presentCount }}</td>
+                    <th style="font-family: DejaVu Sans, sans-serif;">Headers Present:</th>
+                    <td style="font-family: DejaVu Sans, sans-serif;">{{ $presentCount }}</td>
                 </tr>
                 <tr>
-                    <th>Headers Missing:</th>
-                    <td>{{ $missingCount }}</td>
+                    <th style="font-family: DejaVu Sans, sans-serif;">Headers Missing:</th>
+                    <td style="font-family: DejaVu Sans, sans-serif;">{{ $missingCount }}</td>
                 </tr>
                 <tr>
-                    <th>Security Assessment:</th>
-                    <td>
+                    <th style="font-family: DejaVu Sans, sans-serif;">Security Assessment:</th>
+                    <td style="text-align: justify; font-family: DejaVu Sans, sans-serif;">
                         @if($analysis->security_score >= 85)
                             This website demonstrates <strong>excellent security practices</strong> with a comprehensive set of security headers in place. The implementation shows strong protection against common web vulnerabilities including clickjacking, XSS attacks, and MIME-type sniffing. The security configuration indicates a well-maintained and security-conscious approach to web application development.
                         @elseif($analysis->security_score >= 70)
@@ -368,9 +408,102 @@
         </table>
     </div>
 
-    <hr class="divider">
+    <div class="section page-break-before">
+        <h2>Additional Informations - Standard HTTP Headers</h2>
+        <p class="small-muted">
+            All HTTP response headers returned by the target server, categorized by type and security implications.
+        </p>
+        @if(is_array($analysis->headers) && count($analysis->headers) > 0)
+            @php
+                $infoHeaders = ['server', 'x-powered-by', 'date', 'connection', 'transfer-encoding', 'content-length'];
+                $safeHeaders = ['content-type', 'cache-control', 'accept-ranges', 'etag', 'last-modified', 'expires', 'vary'];
+                $warningHeaders = ['x-aspnet-version', 'x-aspnetmvc-version'];
+                
+                // Security header keys for exclusion
+                $securityHeaderKeys = array_map(function($h) {
+                    return $h['key'] === 'https' ? 'https' : $h['key'];
+                }, $securityHeaders);
+                
+                // Header descriptions mapping
+                $headerDescriptions = [
+                    'server' => 'Identifies the server software and version.',
+                    'date' => 'The date and time when the response was generated.',
+                    'content-type' => 'Specifies the media type of the resource.',
+                    'content-length' => 'The size of the response body in bytes.',
+                    'connection' => 'Controls whether the network connection stays open.',
+                    'transfer-encoding' => 'Specifies the form of encoding used to transfer the entity.',
+                    'cache-control' => 'Directives for caching mechanisms in requests and responses.',
+                    'expires' => 'Date/time after which the response is considered stale.',
+                    'last-modified' => 'The last modification date of the resource.',
+                    'etag' => 'Entity tag for cache validation.',
+                    'vary' => 'Tells caches which request headers to consider when determining cacheability.',
+                    'accept-ranges' => 'Indicates which range units are supported.',
+                    'cf-ray' => 'Cloudflare Ray ID for request tracking.',
+                    'cf-cache-status' => 'Cloudflare cache status (HIT, MISS, etc.).',
+                    'cf-request-id' => 'Cloudflare request identifier.',
+                    'nel' => 'Network Error Logging configuration.',
+                    'x-powered-by' => 'Reveals the server technology stack (security risk if exposed).',
+                    'alt-svc' => 'Alternative service advertisement for HTTP/2 or HTTP/3.',
+                    'location' => 'Used in redirects to specify the target URL.',
+                    'set-cookie' => 'Sends cookies from the server to the user agent.',
+                ];
+            @endphp
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Header</th>
+                        <th style="width: 35%;">Value</th>
+                        <th style="width: 30%;">Description</th>
+                        <th style="width: 10%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($analysis->headers as $name => $value)
+                        @php
+                            $headerValue = is_array($value) ? implode(', ', $value) : $value;
+                            $headerLower = strtolower($name);
+                            
+                            // Skip security headers (already covered in other sections)
+                            if (in_array($headerLower, $securityHeaderKeys)) {
+                                continue;
+                            }
+                            
+                            // Get description
+                            $description = $headerDescriptions[$headerLower] ?? 'Standard HTTP header with no specific security implications.';
+                            
+                            // Determine status based on header type
+                            if (in_array($headerLower, $safeHeaders)) {
+                                $status = 'Safe';
+                            } elseif (in_array($headerLower, $infoHeaders)) {
+                                $status = 'Info';
+                            } elseif (in_array($headerLower, $warningHeaders)) {
+                                $status = 'Warning';
+                            } else {
+                                $status = 'Safe';
+                            }
+                            
+                            // Truncate long values for PDF
+                            if (strlen($headerValue) > 80) {
+                                $headerValue = substr($headerValue, 0, 77) . '...';
+                            }
+                        @endphp
+                        <tr>
+                            <td><strong>{{ $name }}</strong></td>
+                            <td style="font-size: 10.5px; word-break: break-word;">{{ $headerValue }}</td>
+                            <td style="font-size: 10.5px;">{{ $description }}</td>
+                            <td style="font-size: 10.5px; text-align: center;">{{ $status }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <p style="padding: 12px; background-color: #f9f9f9; border: 1px solid #000000;">
+                No standard HTTP headers were captured during this scan.
+            </p>
+        @endif
+    </div>
 
-    <div class="section">
+    <div class="section page-break-before">
         <h2>RAW HTTP RESPONSE HEADERS</h2>
         <p class="small-muted">
             The raw response headers returned by the target server during the scan.
@@ -378,20 +511,22 @@
         <div class="raw-headers">
             {{ $rawHeaderOutput }}
         </div>
-    </div>
-
-    <hr class="divider">
-
-    <div class="section">
-        <h2>Next Steps and Conclusion</h2>
-        <p>
-            This report is a point-in-time evaluation of HTTP response headers and does not constitute a full penetration test or vulnerability scan.
-            It is intended to support documentation, tracking, and awareness efforts.
-        </p>
-        <p>
-            <strong>Important Note:</strong> The goal is to consistently achieve an "A" or "A+" score by implementing the recommended headers,
-            such as Content-Security-Policy (CSP) and HTTP Strict Transport Security (HSTS), to mitigate common attacks like XSS and Clickjacking.
-        </p>
+        
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 13px; text-transform: uppercase; font-weight: bold; margin-bottom: 12px;">Next Steps and Conclusion</h3>
+            <p style="font-family: DejaVu Sans, sans-serif; text-align: justify;">
+                This report provides a point-in-time evaluation of HTTP response headers and serves as a security assessment tool. 
+                It is intended to support documentation, tracking, and security awareness efforts. This analysis does not constitute 
+                a comprehensive penetration test or complete vulnerability assessment.
+            </p>
+            <p style="font-family: DejaVu Sans, sans-serif; text-align: justify;">
+                <strong>Recommendation:</strong> To achieve optimal security posture, aim for a Grade "A" (85% or higher) by implementing 
+                all recommended security headers. Critical headers such as Content-Security-Policy (CSP) and HTTP Strict Transport 
+                Security (HSTS) are essential for protecting against common web vulnerabilities including cross-site scripting (XSS), 
+                clickjacking, and man-in-the-middle attacks. Regular security header audits are recommended to maintain and improve 
+                your website's security posture over time.
+            </p>
+        </div>
     </div>
 </body>
 </html>
