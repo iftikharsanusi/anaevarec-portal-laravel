@@ -380,11 +380,11 @@
                 </tr>
                 <tr>
                     <th style="font-family: DejaVu Sans, sans-serif;">Headers Present:</th>
-                    <td style="font-family: DejaVu Sans, sans-serif;">{{ $presentCount }}</td>
+                    <td style="font-size: 16px; font-weight: bold; font-family: DejaVu Sans, sans-serif;">{{ $presentCount }}</td>
                 </tr>
                 <tr>
                     <th style="font-family: DejaVu Sans, sans-serif;">Headers Missing:</th>
-                    <td style="font-family: DejaVu Sans, sans-serif;">{{ $missingCount }}</td>
+                    <td style="font-size: 16px; font-weight: bold; font-family: DejaVu Sans, sans-serif;">{{ $missingCount }}</td>
                 </tr>
                 <tr>
                     <th style="font-family: DejaVu Sans, sans-serif;">Security Assessment:</th>

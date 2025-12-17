@@ -296,11 +296,36 @@ class AnalyzeController extends Controller
             $headerKey = $this->findHeaderKey($headers, $headerName);
             
             if ($headerKey === null) {
+                // Format recommendation using the description
+                $description = $config['description'];
+                // Convert description to infinitive form for "to" construction
+                $descriptionLower = strtolower($description);
+                // Handle common verb forms
+                $descriptionFormatted = $descriptionLower;
+                if (strpos($descriptionLower, 'prevents ') === 0) {
+                    $descriptionFormatted = 'prevent' . substr($descriptionLower, 8);
+                } elseif (strpos($descriptionLower, 'controls ') === 0) {
+                    $descriptionFormatted = 'control' . substr($descriptionLower, 8);
+                } elseif (strpos($descriptionLower, 'forces ') === 0) {
+                    $descriptionFormatted = 'force' . substr($descriptionLower, 7);
+                } elseif (strpos($descriptionLower, 'enables ') === 0) {
+                    $descriptionFormatted = 'enable' . substr($descriptionLower, 8);
+                } elseif (strpos($descriptionLower, 'isolates ') === 0) {
+                    $descriptionFormatted = 'isolate' . substr($descriptionLower, 9);
+                } elseif (strpos($descriptionLower, 'specifies ') === 0) {
+                    $descriptionFormatted = 'specify' . substr($descriptionLower, 10);
+                } elseif (strpos($descriptionLower, 'clears ') === 0) {
+                    $descriptionFormatted = 'clear' . substr($descriptionLower, 7);
+                } else {
+                    // For descriptions that don't start with a verb, use as-is with lowercase first letter
+                    $descriptionFormatted = lcfirst($description);
+                }
+                
                 $missing[] = [
                     'header' => $headerName,
                     'name' => $config['name'],
                     'description' => $config['description'],
-                    'recommendation' => "Add the {$headerName} header to improve security.",
+                    'recommendation' => "Add the {$headerName} header to {$descriptionFormatted}.",
                 ];
                 $recommendations[] = $this->getFriendlyRecommendation($headerName, $config['name']);
             } else {

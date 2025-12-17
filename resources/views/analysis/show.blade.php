@@ -590,7 +590,7 @@
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 d-flex align-items-center" style="min-width: 0; word-wrap: break-word; overflow-wrap: break-word;">
-                                        <p class="mb-0 text-dark fw-bold text-justify" style="line-height: 1.6; word-break: break-word; overflow-wrap: break-word;">{{ $recommendation }}</p>
+                                        <p class="mb-0 text-dark fw-bold text-justify" style="font-family: 'Rubik', sans-serif; line-height: 1.6; word-break: break-word; overflow-wrap: break-word;">{{ $recommendation }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -616,15 +616,15 @@
                     <div class="d-flex align-items-center gap-2">
                         <div class="text-center">
                             <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%); backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.4);">
-                                <span class="h4 fw-bold mb-0" style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $grade }}</span>
+                                <span class="h4 fw-bold mb-0" style="font-family: 'Rubik', sans-serif; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $grade }}</span>
                             </div>
-                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Grade</small>
+                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-family: 'Rubik', sans-serif; font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Grade</small>
                         </div>
                         <div class="text-center">
                             <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 55px; height: 55px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%); backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.4);">
-                                <span class="h5 fw-bold mb-0" style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $analysis->security_score }}%</span>
+                                <span class="h5 fw-bold mb-0" style="font-family: 'Rubik', sans-serif; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">{{ $analysis->security_score }}%</span>
                             </div>
-                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Score</small>
+                            <small class="d-block mt-1 opacity-95 fw-semibold" style="font-family: 'Rubik', sans-serif; font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">Score</small>
                         </div>
                     </div>
                 </div>
@@ -634,7 +634,7 @@
             <div class="p-4 d-flex flex-column">
                 <!-- Security Description with Better Layout -->
                 <div class="mb-4">
-                    <p class="mb-0" style="line-height: 1.75; font-size: 1rem; color: #374151; font-weight: 400; text-align: justify;">
+                    <p class="mb-0" style="font-family: 'Rubik', sans-serif; line-height: 1.75; font-size: 1rem; color: #374151; font-weight: 400; text-align: justify;">
                         @if($analysis->security_score >= 85)
                             This website demonstrates <strong class="text-success" style="font-weight: 600;">excellent security practices</strong> with a comprehensive set of security headers in place. The implementation shows strong protection against common web vulnerabilities including clickjacking, XSS attacks, and MIME-type sniffing. The security configuration indicates a well-maintained and security-conscious approach to web application development.
                         @elseif($analysis->security_score >= 70)
@@ -657,11 +657,11 @@
                         <div class="d-flex align-items-center gap-2 p-2 rounded-3 shadow-sm transition-all" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 3px solid #22c55e; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
                             <div class="flex-shrink-0">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
-                                    <span class="fw-bold text-white" style="font-size: 1rem;">{{ count($presentHeadersDetails) }}</span>
+                                    <span class="fw-bold text-white" style="font-family: 'Rubik', sans-serif; font-size: 1rem;">{{ count($presentHeadersDetails) }}</span>
                                 </div>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 0.85rem; color: #16a34a; letter-spacing: 0.02em;">Headers Present</div>
+                                <div class="fw-semibold" style="font-family: 'Rubik', sans-serif; font-size: 0.85rem; color: #16a34a; letter-spacing: 0.02em;">Headers Present</div>
                             </div>
                         </div>
                     </div>
@@ -669,11 +669,11 @@
                         <div class="d-flex align-items-center gap-2 p-2 rounded-3 shadow-sm transition-all" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 3px solid #ef4444; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
                             <div class="flex-shrink-0">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-                                    <span class="fw-bold text-white" style="font-size: 1rem;">{{ $missingCount }}</span>
+                                    <span class="fw-bold text-white" style="font-family: 'Rubik', sans-serif; font-size: 1rem;">{{ $missingCount }}</span>
                                 </div>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 0.85rem; color: #dc2626; letter-spacing: 0.02em;">Headers Missing</div>
+                                <div class="fw-semibold" style="font-family: 'Rubik', sans-serif; font-size: 0.85rem; color: #dc2626; letter-spacing: 0.02em;">Headers Missing</div>
                             </div>
                         </div>
                     </div>
